@@ -27,26 +27,29 @@ frame.Parent = widget
 
 local rootScroll = Instance.new("ScrollingFrame")
 rootScroll.Name = "RootScroll"
-rootScroll.Size = UDim2.new(1, 0, 1, 0)
+rootScroll.Size = UDim2.new(1, 0, 1, -64)
+rootScroll.Position = UDim2.new(0, 0, 0, 64)
 rootScroll.BackgroundTransparency = 1
 rootScroll.BorderSizePixel = 0
-rootScroll.ScrollBarThickness = 6
+rootScroll.ScrollBarThickness = 8
+rootScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
+rootScroll.ScrollBarImageTransparency = 0.2
 rootScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 rootScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 rootScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 rootScroll.Parent = frame
 
 local rootPadding = Instance.new("UIPadding")
-rootPadding.PaddingTop = UDim.new(0, 10)
-rootPadding.PaddingBottom = UDim.new(0, 10)
-rootPadding.PaddingLeft = UDim.new(0, 10)
-rootPadding.PaddingRight = UDim.new(0, 10)
+rootPadding.PaddingTop = UDim.new(0, 8)
+rootPadding.PaddingBottom = UDim.new(0, 8)
+rootPadding.PaddingLeft = UDim.new(0, 8)
+rootPadding.PaddingRight = UDim.new(0, 8)
 rootPadding.Parent = rootScroll
 
 local rootLayout = Instance.new("UIListLayout")
 rootLayout.FillDirection = Enum.FillDirection.Vertical
 rootLayout.SortOrder = Enum.SortOrder.LayoutOrder
-rootLayout.Padding = UDim.new(0, 10)
+rootLayout.Padding = UDim.new(0, 8)
 rootLayout.Parent = rootScroll
 
 local function addPanel(parent, height)
@@ -54,6 +57,7 @@ local function addPanel(parent, height)
 	panel.BackgroundColor3 = Color3.fromRGB(49, 49, 49) -- #313131
 	panel.BorderSizePixel = 0
 	panel.Size = UDim2.new(1, 0, 0, height)
+	panel.ClipsDescendants = true
 
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
@@ -65,10 +69,10 @@ local function addPanel(parent, height)
 	corner.Parent = panel
 
 	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 10)
-	padding.PaddingBottom = UDim.new(0, 10)
-	padding.PaddingLeft = UDim.new(0, 10)
-	padding.PaddingRight = UDim.new(0, 10)
+	padding.PaddingTop = UDim.new(0, 8)
+	padding.PaddingBottom = UDim.new(0, 8)
+	padding.PaddingLeft = UDim.new(0, 8)
+	padding.PaddingRight = UDim.new(0, 8)
 	padding.Parent = panel
 
 	panel.Parent = parent
@@ -76,17 +80,41 @@ local function addPanel(parent, height)
 end
 
 local function addSectionLabel(parent, text)
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.Size = UDim2.new(1, 0, 0, 20)
+	row.Parent = parent
+
+	local accent = Instance.new("Frame")
+	accent.BackgroundColor3 = Color3.fromRGB(10, 132, 255) -- #0A84FF
+	accent.BackgroundTransparency = 0.15
+	accent.BorderSizePixel = 0
+	accent.Size = UDim2.new(0, 3, 1, -6)
+	accent.Position = UDim2.new(0, 0, 0, 3)
+	accent.Parent = row
+
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, 0, 0, 18)
-	label.Text = text
+	label.Size = UDim2.new(1, -10, 1, 0)
+	label.Position = UDim2.new(0, 10, 0, 0)
+	label.Text = string.upper(text)
 	label.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
-	label.TextTransparency = 0.1
+	label.TextTransparency = 0.18
 	label.Font = Enum.Font.SourceSansSemibold
-	label.TextSize = 14
+	label.TextSize = 13
 	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = parent
-	return label
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.Parent = row
+
+	local divider = Instance.new("Frame")
+	divider.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+	divider.BackgroundTransparency = 0.45
+	divider.BorderSizePixel = 0
+	divider.Size = UDim2.new(1, 0, 0, 1)
+	divider.Position = UDim2.new(0, 0, 1, -1)
+	divider.Parent = row
+
+	return row
 end
 
 local function brighten(color, factor)
@@ -123,44 +151,65 @@ local function styleButton(btn, baseColor)
 	btn.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
 	btn.Font = Enum.Font.SourceSansSemibold
 	btn.TextSize = 15
+	btn.TextYAlignment = Enum.TextYAlignment.Center
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
+	corner.CornerRadius = UDim.new(0, 7)
 	corner.Parent = btn
 
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
 	stroke.Thickness = 1
+	stroke.Transparency = 0.25
 	stroke.Parent = btn
 
 	applyHover(btn, baseColor)
 end
 
+local headerPanel = addPanel(frame, 56)
+headerPanel.Position = UDim2.new(0, 8, 0, 8)
+headerPanel.Size = UDim2.new(1, -16, 0, 56)
+headerPanel.ZIndex = 10
+
+local headerLayout = Instance.new("UIListLayout")
+headerLayout.FillDirection = Enum.FillDirection.Vertical
+headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+headerLayout.Padding = UDim.new(0, 2)
+headerLayout.Parent = headerPanel
+
 local title = Instance.new("TextLabel")
 title.Text = "AI Game Builder"
-title.Size = UDim2.new(1, 0, 0, 28)
+title.Size = UDim2.new(1, 0, 0, 24)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.LayoutOrder = 1
-title.Parent = rootScroll
+title.ZIndex = 11
+title.Parent = headerPanel
 
-local headerDivider = Instance.new("Frame")
-headerDivider.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- #3C3C3C
-headerDivider.BorderSizePixel = 0
-headerDivider.Size = UDim2.new(1, 0, 0, 1)
-headerDivider.LayoutOrder = 2
-headerDivider.Parent = rootScroll
+local subtitle = Instance.new("TextLabel")
+subtitle.Text = "Generate, refine, and build directly into your place"
+subtitle.Size = UDim2.new(1, 0, 0, 18)
+subtitle.BackgroundTransparency = 1
+subtitle.TextColor3 = Color3.fromRGB(237, 237, 237)
+subtitle.TextTransparency = 0.45
+subtitle.Font = Enum.Font.SourceSans
+subtitle.TextSize = 13
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.LayoutOrder = 2
+subtitle.ZIndex = 11
+subtitle.Parent = headerPanel
 
-local promptPanel = addPanel(rootScroll, 120)
-promptPanel.LayoutOrder = 3
+local promptPanel = addPanel(rootScroll, 0)
+promptPanel.LayoutOrder = 1
+promptPanel.AutomaticSize = Enum.AutomaticSize.Y
 
 local promptLayout = Instance.new("UIListLayout")
 promptLayout.FillDirection = Enum.FillDirection.Vertical
 promptLayout.SortOrder = Enum.SortOrder.LayoutOrder
-promptLayout.Padding = UDim.new(0, 8)
+promptLayout.Padding = UDim.new(0, 6)
 promptLayout.Parent = promptPanel
 
 addSectionLabel(promptPanel, "Prompt").LayoutOrder = 1
@@ -200,20 +249,21 @@ promptCorner.Parent = promptBox
 
 promptBox.Parent = promptPanel
 
-local actionsPanel = addPanel(rootScroll, 164)
-actionsPanel.LayoutOrder = 4
+local actionsPanel = addPanel(rootScroll, 0)
+actionsPanel.LayoutOrder = 2
+actionsPanel.AutomaticSize = Enum.AutomaticSize.Y
 
 local actionsLayout = Instance.new("UIListLayout")
 actionsLayout.FillDirection = Enum.FillDirection.Vertical
 actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-actionsLayout.Padding = UDim.new(0, 8)
+actionsLayout.Padding = UDim.new(0, 6)
 actionsLayout.Parent = actionsPanel
 
 addSectionLabel(actionsPanel, "Actions").LayoutOrder = 1
 
 local generateBtn = Instance.new("TextButton")
 generateBtn.Text = "Generate"
-generateBtn.Size = UDim2.new(1, 0, 0, 38)
+generateBtn.Size = UDim2.new(1, 0, 0, 36)
 generateBtn.Position = UDim2.new(0, 0, 0, 0)
 generateBtn.LayoutOrder = 2
 styleButton(generateBtn, Color3.fromRGB(10, 132, 255)) -- #0A84FF
@@ -222,7 +272,7 @@ generateBtn.Parent = actionsPanel
 
 local secondaryRow = Instance.new("Frame")
 secondaryRow.BackgroundTransparency = 1
-secondaryRow.Size = UDim2.new(1, 0, 0, 34)
+secondaryRow.Size = UDim2.new(1, 0, 0, 32)
 secondaryRow.LayoutOrder = 3
 secondaryRow.Parent = actionsPanel
 
@@ -235,7 +285,7 @@ secondaryLayout.Parent = secondaryRow
 
 local refineBtn = Instance.new("TextButton")
 refineBtn.Text = "Refine"
-refineBtn.Size = UDim2.new(0.5, -4, 0, 34)
+refineBtn.Size = UDim2.new(0.5, -4, 0, 30)
 refineBtn.Position = UDim2.new(0, 0, 0, 0)
 refineBtn.LayoutOrder = 1
 styleButton(refineBtn, Color3.fromRGB(70, 70, 70))
@@ -243,7 +293,7 @@ refineBtn.Parent = secondaryRow
 
 local planBtn = Instance.new("TextButton")
 planBtn.Text = "Plan"
-planBtn.Size = UDim2.new(0.5, -4, 0, 34)
+planBtn.Size = UDim2.new(0.5, -4, 0, 30)
 planBtn.Position = UDim2.new(0, 0, 0, 0)
 planBtn.LayoutOrder = 2
 styleButton(planBtn, Color3.fromRGB(70, 70, 70))
@@ -251,7 +301,7 @@ planBtn.Parent = secondaryRow
 
 local controlRow = Instance.new("Frame")
 controlRow.BackgroundTransparency = 1
-controlRow.Size = UDim2.new(1, 0, 0, 30)
+controlRow.Size = UDim2.new(1, 0, 0, 32)
 controlRow.LayoutOrder = 4
 controlRow.Parent = actionsPanel
 
@@ -271,7 +321,7 @@ controlLabel.Parent = actionsPanel
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Text = "Clear Build"
-clearBtn.Size = UDim2.new(0.5, -4, 0, 30)
+clearBtn.Size = UDim2.new(0.5, -4, 0, 28)
 clearBtn.Position = UDim2.new(0, 0, 0, 0)
 clearBtn.LayoutOrder = 2
 styleButton(clearBtn, Color3.fromRGB(92, 32, 32)) -- dark red
@@ -279,7 +329,7 @@ clearBtn.Parent = controlRow
 
 local stopBtn = Instance.new("TextButton")
 stopBtn.Text = "Stop"
-stopBtn.Size = UDim2.new(0.5, -4, 0, 30)
+stopBtn.Size = UDim2.new(0.5, -4, 0, 28)
 stopBtn.Position = UDim2.new(0, 0, 0, 0)
 stopBtn.LayoutOrder = 1
 styleButton(stopBtn, Color3.fromRGB(70, 70, 70))
@@ -287,7 +337,7 @@ stopBtn.Parent = controlRow
 
 local historyRow = Instance.new("Frame")
 historyRow.BackgroundTransparency = 1
-historyRow.Size = UDim2.new(1, 0, 0, 30)
+historyRow.Size = UDim2.new(1, 0, 0, 32)
 historyRow.LayoutOrder = 6
 historyRow.Parent = actionsPanel
 
@@ -300,7 +350,7 @@ historyLayout.Parent = historyRow
 
 local undoBtn = Instance.new("TextButton")
 undoBtn.Text = "Undo"
-undoBtn.Size = UDim2.new(0.5, -4, 0, 30)
+undoBtn.Size = UDim2.new(0.5, -4, 0, 28)
 undoBtn.Position = UDim2.new(0, 0, 0, 0)
 undoBtn.LayoutOrder = 1
 styleButton(undoBtn, Color3.fromRGB(70, 70, 70))
@@ -308,20 +358,20 @@ undoBtn.Parent = historyRow
 
 local redoBtn = Instance.new("TextButton")
 redoBtn.Text = "Redo"
-redoBtn.Size = UDim2.new(0.5, -4, 0, 30)
+redoBtn.Size = UDim2.new(0.5, -4, 0, 28)
 redoBtn.Position = UDim2.new(0, 0, 0, 0)
 redoBtn.LayoutOrder = 2
 styleButton(redoBtn, Color3.fromRGB(70, 70, 70))
 redoBtn.Parent = historyRow
 
 local outputPanel = addPanel(rootScroll, 0)
-outputPanel.LayoutOrder = 5
+outputPanel.LayoutOrder = 3
 outputPanel.AutomaticSize = Enum.AutomaticSize.Y
 
 local outputLayout = Instance.new("UIListLayout")
 outputLayout.FillDirection = Enum.FillDirection.Vertical
 outputLayout.SortOrder = Enum.SortOrder.LayoutOrder
-outputLayout.Padding = UDim.new(0, 8)
+outputLayout.Padding = UDim.new(0, 6)
 outputLayout.Parent = outputPanel
 
 addSectionLabel(outputPanel, "Output").LayoutOrder = 1
@@ -335,7 +385,7 @@ outputInner.Parent = outputPanel
 local outputInnerLayout = Instance.new("UIListLayout")
 outputInnerLayout.FillDirection = Enum.FillDirection.Vertical
 outputInnerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-outputInnerLayout.Padding = UDim.new(0, 8)
+outputInnerLayout.Padding = UDim.new(0, 6)
 outputInnerLayout.Parent = outputInner
 
 local planScroll = Instance.new("ScrollingFrame")
@@ -344,7 +394,9 @@ planScroll.Size = UDim2.new(1, 0, 0, 120)
 planScroll.Position = UDim2.new(0, 0, 0, 0)
 planScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
 planScroll.BorderSizePixel = 0
-planScroll.ScrollBarThickness = 6
+planScroll.ScrollBarThickness = 8
+planScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
+planScroll.ScrollBarImageTransparency = 0.2
 planScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 planScroll.Active = true
 planScroll.ScrollingEnabled = true
@@ -378,11 +430,13 @@ planBox.AutomaticSize = Enum.AutomaticSize.Y
 planBox.Parent = planScroll
 
 local logScroll = Instance.new("ScrollingFrame")
-logScroll.Size = UDim2.new(1, 0, 0, 220)
+logScroll.Size = UDim2.new(1, 0, 0, 300)
 logScroll.Position = UDim2.new(0, 0, 0, 0)
 logScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
 logScroll.BorderSizePixel = 0
-logScroll.ScrollBarThickness = 6
+logScroll.ScrollBarThickness = 8
+logScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
+logScroll.ScrollBarImageTransparency = 0.2
 logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 logScroll.Active = true
 logScroll.ScrollingEnabled = true
