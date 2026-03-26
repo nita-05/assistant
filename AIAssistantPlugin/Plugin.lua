@@ -21,9 +21,54 @@ end)
 -- UI ROOT
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, 0, 1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(43, 43, 43) -- #2B2B2B
+frame.BackgroundColor3 = Color3.fromRGB(11, 14, 26) -- deep navy base (reference-like)
 frame.BorderSizePixel = 0
 frame.Parent = widget
+
+local THEME = {
+	Bg = Color3.fromRGB(11, 14, 26),
+	Panel = Color3.fromRGB(16, 20, 36),
+	Surface = Color3.fromRGB(12, 16, 30),
+	Border = Color3.fromRGB(34, 44, 74),
+	Text = Color3.fromRGB(236, 242, 255),
+	Muted = Color3.fromRGB(165, 176, 205),
+	Primary = Color3.fromRGB(34, 211, 238), -- teal accent (reference-like)
+	Primary2 = Color3.fromRGB(59, 130, 246), -- secondary blue
+	Danger = Color3.fromRGB(120, 38, 55),
+	Radius = UDim.new(0, 8),
+	ButtonRadius = UDim.new(0, 14), -- pill buttons like reference
+}
+
+do
+	-- Background "glow" layers (no external assets)
+	local glow = Instance.new("Frame")
+	glow.Name = "BgGlow"
+	glow.BackgroundColor3 = Color3.fromRGB(30, 24, 70)
+	glow.BackgroundTransparency = 0.35
+	glow.BorderSizePixel = 0
+	glow.Size = UDim2.new(1.2, 0, 0.6, 0)
+	glow.Position = UDim2.new(-0.1, 0, -0.15, 0)
+	glow.ZIndex = 0
+	glow.Parent = frame
+
+	local glowCorner = Instance.new("UICorner")
+	glowCorner.CornerRadius = UDim.new(0, 40)
+	glowCorner.Parent = glow
+
+	local glowGrad = Instance.new("UIGradient")
+	glowGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(59, 130, 246)),
+		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(34, 211, 238)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(147, 51, 234)),
+	})
+	glowGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.55),
+		NumberSequenceKeypoint.new(0.7, 0.8),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	glowGrad.Rotation = 25
+	glowGrad.Parent = glow
+end
 
 local rootScroll = Instance.new("ScrollingFrame")
 rootScroll.Name = "RootScroll"
@@ -54,18 +99,19 @@ rootLayout.Parent = rootScroll
 
 local function addPanel(parent, height)
 	local panel = Instance.new("Frame")
-	panel.BackgroundColor3 = Color3.fromRGB(49, 49, 49) -- #313131
+	panel.BackgroundColor3 = THEME.Panel
 	panel.BorderSizePixel = 0
 	panel.Size = UDim2.new(1, 0, 0, height)
 	panel.ClipsDescendants = true
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+	stroke.Color = THEME.Border
 	stroke.Thickness = 1
+	stroke.Transparency = 0.35
 	stroke.Parent = panel
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
+	corner.CornerRadius = THEME.Radius
 	corner.Parent = panel
 
 	local padding = Instance.new("UIPadding")
@@ -86,8 +132,8 @@ local function addSectionLabel(parent, text)
 	row.Parent = parent
 
 	local accent = Instance.new("Frame")
-	accent.BackgroundColor3 = Color3.fromRGB(10, 132, 255) -- #0A84FF
-	accent.BackgroundTransparency = 0.15
+	accent.BackgroundColor3 = THEME.Primary
+	accent.BackgroundTransparency = 0
 	accent.BorderSizePixel = 0
 	accent.Size = UDim2.new(0, 3, 1, -6)
 	accent.Position = UDim2.new(0, 0, 0, 3)
@@ -98,8 +144,8 @@ local function addSectionLabel(parent, text)
 	label.Size = UDim2.new(1, -10, 1, 0)
 	label.Position = UDim2.new(0, 10, 0, 0)
 	label.Text = string.upper(text)
-	label.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
-	label.TextTransparency = 0.18
+	label.TextColor3 = THEME.Text
+	label.TextTransparency = 0.08
 	label.Font = Enum.Font.SourceSansSemibold
 	label.TextSize = 13
 	label.TextXAlignment = Enum.TextXAlignment.Left
@@ -107,8 +153,8 @@ local function addSectionLabel(parent, text)
 	label.Parent = row
 
 	local divider = Instance.new("Frame")
-	divider.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- #3C3C3C
-	divider.BackgroundTransparency = 0.45
+	divider.BackgroundColor3 = THEME.Border
+	divider.BackgroundTransparency = 0.55
 	divider.BorderSizePixel = 0
 	divider.Size = UDim2.new(1, 0, 0, 1)
 	divider.Position = UDim2.new(0, 0, 1, -1)
@@ -148,20 +194,36 @@ end
 local function styleButton(btn, baseColor)
 	btn.BackgroundColor3 = baseColor
 	btn.BorderSizePixel = 0
-	btn.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
+	btn.TextColor3 = THEME.Text
 	btn.Font = Enum.Font.SourceSansSemibold
 	btn.TextSize = 15
 	btn.TextYAlignment = Enum.TextYAlignment.Center
 
+	local scale = Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = btn
+
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 7)
+	corner.CornerRadius = THEME.ButtonRadius
 	corner.Parent = btn
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+	stroke.Color = THEME.Border
 	stroke.Thickness = 1
-	stroke.Transparency = 0.25
+	stroke.Transparency = 0.45
 	stroke.Parent = btn
+
+	btn.MouseButton1Down:Connect(function()
+		if btn.Active then
+			scale.Scale = 0.985
+		end
+	end)
+	btn.MouseButton1Up:Connect(function()
+		scale.Scale = 1
+	end)
+	btn.MouseLeave:Connect(function()
+		scale.Scale = 1
+	end)
 
 	applyHover(btn, baseColor)
 end
@@ -171,36 +233,174 @@ headerPanel.Position = UDim2.new(0, 8, 0, 8)
 headerPanel.Size = UDim2.new(1, -16, 0, 56)
 headerPanel.ZIndex = 10
 
-local headerLayout = Instance.new("UIListLayout")
-headerLayout.FillDirection = Enum.FillDirection.Vertical
-headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-headerLayout.Padding = UDim.new(0, 2)
-headerLayout.Parent = headerPanel
+headerPanel.BackgroundColor3 = Color3.fromRGB(16, 20, 36)
+local headerGrad = Instance.new("UIGradient")
+headerGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 26, 46)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 16, 30)),
+})
+headerGrad.Rotation = 90
+headerGrad.Parent = headerPanel
+
+local headerContent = Instance.new("Frame")
+headerContent.Name = "HeaderContent"
+headerContent.BackgroundTransparency = 1
+headerContent.Size = UDim2.new(1, 0, 1, 0)
+headerContent.ZIndex = 11
+headerContent.Parent = headerPanel
+
+local headerPadding = Instance.new("UIPadding")
+headerPadding.PaddingTop = UDim.new(0, 10)
+headerPadding.PaddingBottom = UDim.new(0, 10)
+headerPadding.PaddingLeft = UDim.new(0, 10)
+headerPadding.PaddingRight = UDim.new(0, 10)
+headerPadding.Parent = headerContent
+
+local headerH = Instance.new("UIListLayout")
+headerH.FillDirection = Enum.FillDirection.Horizontal
+headerH.HorizontalAlignment = Enum.HorizontalAlignment.Left
+headerH.VerticalAlignment = Enum.VerticalAlignment.Center
+headerH.SortOrder = Enum.SortOrder.LayoutOrder
+headerH.Padding = UDim.new(0, 10)
+headerH.Parent = headerContent
+
+local brandIcon = Instance.new("TextLabel")
+brandIcon.Name = "BrandIcon"
+brandIcon.BackgroundColor3 = Color3.fromRGB(20, 26, 46)
+brandIcon.BorderSizePixel = 0
+brandIcon.Size = UDim2.new(0, 28, 0, 28)
+brandIcon.Position = UDim2.new(0, 0, 0, 0)
+brandIcon.Text = ""
+brandIcon.TextColor3 = THEME.Text
+brandIcon.TextSize = 12
+brandIcon.Font = Enum.Font.SourceSansBold
+brandIcon.ZIndex = 12
+brandIcon.LayoutOrder = 1
+brandIcon.Parent = headerContent
+
+local brandCorner = Instance.new("UICorner")
+brandCorner.CornerRadius = UDim.new(0, 10)
+brandCorner.Parent = brandIcon
+
+local brandStroke = Instance.new("UIStroke")
+brandStroke.Color = THEME.Primary
+brandStroke.Transparency = 0.35
+brandStroke.Thickness = 1
+brandStroke.Parent = brandIcon
+
+local brandGrad = Instance.new("UIGradient")
+brandGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, THEME.Primary2),
+	ColorSequenceKeypoint.new(1, THEME.Primary),
+})
+brandGrad.Rotation = 45
+brandGrad.Parent = brandIcon
+
+local logoCore = Instance.new("Frame")
+logoCore.Name = "LogoCore"
+logoCore.AnchorPoint = Vector2.new(0.5, 0.5)
+logoCore.Position = UDim2.new(0.5, 0, 0.5, 0)
+logoCore.Size = UDim2.new(0, 12, 0, 12)
+logoCore.BackgroundColor3 = Color3.fromRGB(8, 18, 38)
+logoCore.BorderSizePixel = 0
+logoCore.ZIndex = 13
+logoCore.Parent = brandIcon
+
+local logoCoreCorner = Instance.new("UICorner")
+logoCoreCorner.CornerRadius = UDim.new(0, 4)
+logoCoreCorner.Parent = logoCore
+
+local logoCoreStroke = Instance.new("UIStroke")
+logoCoreStroke.Color = THEME.Primary
+logoCoreStroke.Thickness = 1
+logoCoreStroke.Transparency = 0.1
+logoCoreStroke.Parent = logoCore
+
+local logoDot = Instance.new("Frame")
+logoDot.Name = "LogoDot"
+logoDot.AnchorPoint = Vector2.new(1, 0)
+logoDot.Position = UDim2.new(1, -5, 0, 5)
+logoDot.Size = UDim2.new(0, 4, 0, 4)
+logoDot.BackgroundColor3 = THEME.Primary
+logoDot.BorderSizePixel = 0
+logoDot.ZIndex = 14
+logoDot.Parent = brandIcon
+
+local logoDotCorner = Instance.new("UICorner")
+logoDotCorner.CornerRadius = UDim.new(1, 0)
+logoDotCorner.Parent = logoDot
+
+local titleStack = Instance.new("Frame")
+titleStack.Name = "TitleStack"
+titleStack.BackgroundTransparency = 1
+titleStack.Size = UDim2.new(1, -170, 1, 0)
+titleStack.LayoutOrder = 2
+titleStack.ZIndex = 11
+titleStack.Parent = headerContent
+
+local titleStackLayout = Instance.new("UIListLayout")
+titleStackLayout.FillDirection = Enum.FillDirection.Vertical
+titleStackLayout.SortOrder = Enum.SortOrder.LayoutOrder
+titleStackLayout.Padding = UDim.new(0, 1)
+titleStackLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+titleStackLayout.Parent = titleStack
 
 local title = Instance.new("TextLabel")
 title.Text = "AI Game Builder"
-title.Size = UDim2.new(1, 0, 0, 24)
+title.Size = UDim2.new(1, 0, 0, 22)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
+title.TextColor3 = THEME.Text
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
+title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.LayoutOrder = 1
 title.ZIndex = 11
-title.Parent = headerPanel
+title.Parent = titleStack
 
 local subtitle = Instance.new("TextLabel")
 subtitle.Text = "Generate, refine, and build directly into your place"
-subtitle.Size = UDim2.new(1, 0, 0, 18)
+subtitle.Size = UDim2.new(1, 0, 0, 16)
 subtitle.BackgroundTransparency = 1
-subtitle.TextColor3 = Color3.fromRGB(237, 237, 237)
+subtitle.TextColor3 = THEME.Text
 subtitle.TextTransparency = 0.45
 subtitle.Font = Enum.Font.SourceSans
-subtitle.TextSize = 13
+subtitle.TextSize = 12
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.LayoutOrder = 2
 subtitle.ZIndex = 11
-subtitle.Parent = headerPanel
+subtitle.Parent = titleStack
+
+local headerFill = Instance.new("Frame")
+headerFill.Name = "HeaderFill"
+headerFill.BackgroundTransparency = 1
+headerFill.Size = UDim2.new(1, 0, 1, 0)
+headerFill.LayoutOrder = 3
+headerFill.Parent = headerContent
+
+local statusPill = Instance.new("TextLabel")
+statusPill.Name = "StatusPill"
+statusPill.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+statusPill.BorderSizePixel = 0
+statusPill.Size = UDim2.new(0, 86, 0, 22)
+statusPill.Position = UDim2.new(0, 0, 0, 0)
+statusPill.Text = "READY"
+statusPill.TextColor3 = THEME.Text
+statusPill.TextTransparency = 0.15
+statusPill.Font = Enum.Font.SourceSansSemibold
+statusPill.TextSize = 12
+statusPill.ZIndex = 12
+statusPill.LayoutOrder = 4
+statusPill.Parent = headerContent
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 999)
+statusCorner.Parent = statusPill
+
+local statusStroke = Instance.new("UIStroke")
+statusStroke.Color = THEME.Border
+statusStroke.Thickness = 1
+statusStroke.Transparency = 0.4
+statusStroke.Parent = statusPill
 
 local promptPanel = addPanel(rootScroll, 0)
 promptPanel.LayoutOrder = 1
@@ -219,8 +419,8 @@ promptBox.PlaceholderText = "Describe your game"
 promptBox.Text = ""
 promptBox.Size = UDim2.new(1, 0, 0, 72)
 promptBox.Position = UDim2.new(0, 0, 0, 0)
-promptBox.BackgroundColor3 = Color3.fromRGB(43, 43, 43) -- slightly darker input
-promptBox.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
+promptBox.BackgroundColor3 = THEME.Surface
+promptBox.TextColor3 = THEME.Text
 promptBox.ClearTextOnFocus = false
 promptBox.TextWrapped = true
 promptBox.TextXAlignment = Enum.TextXAlignment.Left
@@ -239,13 +439,23 @@ promptPadding.PaddingRight = UDim.new(0, 8)
 promptPadding.Parent = promptBox
 
 local promptStroke = Instance.new("UIStroke")
-promptStroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+promptStroke.Color = THEME.Border
 promptStroke.Thickness = 1
+promptStroke.Transparency = 0.35
 promptStroke.Parent = promptBox
 
 local promptCorner = Instance.new("UICorner")
 promptCorner.CornerRadius = UDim.new(0, 8)
 promptCorner.Parent = promptBox
+
+promptBox.Focused:Connect(function()
+	promptStroke.Color = THEME.Primary
+	promptStroke.Transparency = 0.15
+end)
+promptBox.FocusLost:Connect(function()
+	promptStroke.Color = THEME.Border
+	promptStroke.Transparency = 0.35
+end)
 
 promptBox.Parent = promptPanel
 
@@ -256,23 +466,40 @@ actionsPanel.AutomaticSize = Enum.AutomaticSize.Y
 local actionsLayout = Instance.new("UIListLayout")
 actionsLayout.FillDirection = Enum.FillDirection.Vertical
 actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-actionsLayout.Padding = UDim.new(0, 6)
+actionsLayout.Padding = UDim.new(0, 4)
 actionsLayout.Parent = actionsPanel
 
 addSectionLabel(actionsPanel, "Actions").LayoutOrder = 1
 
 local generateBtn = Instance.new("TextButton")
 generateBtn.Text = "Generate"
-generateBtn.Size = UDim2.new(1, 0, 0, 36)
+generateBtn.Size = UDim2.new(0.5, -4, 0, 36)
 generateBtn.Position = UDim2.new(0, 0, 0, 0)
 generateBtn.LayoutOrder = 2
-styleButton(generateBtn, Color3.fromRGB(10, 132, 255)) -- #0A84FF
-generateBtn.TextSize = 16
-generateBtn.Parent = actionsPanel
+styleButton(generateBtn, THEME.Primary)
+generateBtn.TextSize = 15
+generateBtn.TextColor3 = Color3.fromRGB(16, 50, 92)
+
+do
+	-- subtle "premium" sheen on primary button (still minimal)
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, brighten(THEME.Primary, 0.95)),
+		ColorSequenceKeypoint.new(1, brighten(THEME.Primary2, 0.95)),
+	})
+	g.Rotation = 0
+	g.Parent = generateBtn
+
+	local s = generateBtn:FindFirstChildOfClass("UIStroke")
+	if s then
+		s.Color = THEME.Primary2
+		s.Transparency = 0.25
+	end
+end
 
 local secondaryRow = Instance.new("Frame")
 secondaryRow.BackgroundTransparency = 1
-secondaryRow.Size = UDim2.new(1, 0, 0, 32)
+secondaryRow.Size = UDim2.new(1, 0, 0, 36)
 secondaryRow.LayoutOrder = 3
 secondaryRow.Parent = actionsPanel
 
@@ -283,12 +510,14 @@ secondaryLayout.SortOrder = Enum.SortOrder.LayoutOrder
 secondaryLayout.Padding = UDim.new(0, 8)
 secondaryLayout.Parent = secondaryRow
 
+generateBtn.Parent = secondaryRow
+
 local refineBtn = Instance.new("TextButton")
 refineBtn.Text = "Refine"
-refineBtn.Size = UDim2.new(0.5, -4, 0, 30)
+refineBtn.Size = UDim2.new(0.5, -4, 0, 36)
 refineBtn.Position = UDim2.new(0, 0, 0, 0)
 refineBtn.LayoutOrder = 1
-styleButton(refineBtn, Color3.fromRGB(70, 70, 70))
+styleButton(refineBtn, Color3.fromRGB(33, 40, 64))
 refineBtn.Parent = secondaryRow
 
 local planBtn = Instance.new("TextButton")
@@ -296,12 +525,13 @@ planBtn.Text = "Plan"
 planBtn.Size = UDim2.new(0.5, -4, 0, 30)
 planBtn.Position = UDim2.new(0, 0, 0, 0)
 planBtn.LayoutOrder = 2
-styleButton(planBtn, Color3.fromRGB(70, 70, 70))
-planBtn.Parent = secondaryRow
+styleButton(planBtn, THEME.Panel)
+planBtn.Visible = false
+planBtn.Active = false
 
 local controlRow = Instance.new("Frame")
 controlRow.BackgroundTransparency = 1
-controlRow.Size = UDim2.new(1, 0, 0, 32)
+controlRow.Size = UDim2.new(1, 0, 0, 36)
 controlRow.LayoutOrder = 4
 controlRow.Parent = actionsPanel
 
@@ -310,6 +540,7 @@ controlLayout.FillDirection = Enum.FillDirection.Horizontal
 controlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 controlLayout.SortOrder = Enum.SortOrder.LayoutOrder
 controlLayout.Padding = UDim.new(0, 8)
+controlLayout.HorizontalFlex = Enum.UIFlexAlignment.Fill
 controlLayout.Parent = controlRow
 
 local controlLabel = Instance.new("TextLabel")
@@ -321,25 +552,33 @@ controlLabel.Parent = actionsPanel
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Text = "Clear Build"
-clearBtn.Size = UDim2.new(0.5, -4, 0, 28)
+clearBtn.Size = UDim2.new(0, 0, 0, 36)
 clearBtn.Position = UDim2.new(0, 0, 0, 0)
-clearBtn.LayoutOrder = 2
+clearBtn.LayoutOrder = 3
 styleButton(clearBtn, Color3.fromRGB(92, 32, 32)) -- dark red
+do
+	local s = clearBtn:FindFirstChildOfClass("UIStroke")
+	if s then
+		s.Color = brighten(THEME.Danger, 1.1)
+		s.Transparency = 0.35
+	end
+end
 clearBtn.Parent = controlRow
 
 local stopBtn = Instance.new("TextButton")
 stopBtn.Text = "Stop"
-stopBtn.Size = UDim2.new(0.5, -4, 0, 28)
+stopBtn.Size = UDim2.new(0, 0, 0, 36)
 stopBtn.Position = UDim2.new(0, 0, 0, 0)
-stopBtn.LayoutOrder = 1
-styleButton(stopBtn, Color3.fromRGB(70, 70, 70))
+stopBtn.LayoutOrder = 2
+styleButton(stopBtn, Color3.fromRGB(33, 40, 64))
 stopBtn.Parent = controlRow
 
 local historyRow = Instance.new("Frame")
 historyRow.BackgroundTransparency = 1
-historyRow.Size = UDim2.new(1, 0, 0, 32)
+historyRow.Size = UDim2.new(1, 0, 0, 0)
 historyRow.LayoutOrder = 6
 historyRow.Parent = actionsPanel
+historyRow.Visible = false
 
 local historyLayout = Instance.new("UIListLayout")
 historyLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -350,19 +589,20 @@ historyLayout.Parent = historyRow
 
 local undoBtn = Instance.new("TextButton")
 undoBtn.Text = "Undo"
-undoBtn.Size = UDim2.new(0.5, -4, 0, 28)
+undoBtn.Size = UDim2.new(0, 0, 0, 36)
 undoBtn.Position = UDim2.new(0, 0, 0, 0)
 undoBtn.LayoutOrder = 1
-styleButton(undoBtn, Color3.fromRGB(70, 70, 70))
-undoBtn.Parent = historyRow
+styleButton(undoBtn, Color3.fromRGB(33, 40, 64))
+undoBtn.Parent = controlRow
 
 local redoBtn = Instance.new("TextButton")
 redoBtn.Text = "Redo"
 redoBtn.Size = UDim2.new(0.5, -4, 0, 28)
 redoBtn.Position = UDim2.new(0, 0, 0, 0)
 redoBtn.LayoutOrder = 2
-styleButton(redoBtn, Color3.fromRGB(70, 70, 70))
-redoBtn.Parent = historyRow
+styleButton(redoBtn, THEME.Panel)
+redoBtn.Visible = false
+redoBtn.Active = false
 
 local outputPanel = addPanel(rootScroll, 0)
 outputPanel.LayoutOrder = 3
@@ -392,7 +632,7 @@ local planScroll = Instance.new("ScrollingFrame")
 planScroll.Name = "PlanScroll"
 planScroll.Size = UDim2.new(1, 0, 0, 120)
 planScroll.Position = UDim2.new(0, 0, 0, 0)
-planScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+planScroll.BackgroundColor3 = THEME.Surface
 planScroll.BorderSizePixel = 0
 planScroll.ScrollBarThickness = 8
 planScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
@@ -407,8 +647,9 @@ planCorner.CornerRadius = UDim.new(0, 8)
 planCorner.Parent = planScroll
 
 local planStroke = Instance.new("UIStroke")
-planStroke.Color = Color3.fromRGB(60, 60, 60)
+planStroke.Color = THEME.Border
 planStroke.Thickness = 1
+planStroke.Transparency = 0.35
 planStroke.Parent = planScroll
 
 planScroll.Parent = outputInner
@@ -432,7 +673,7 @@ planBox.Parent = planScroll
 local logScroll = Instance.new("ScrollingFrame")
 logScroll.Size = UDim2.new(1, 0, 0, 300)
 logScroll.Position = UDim2.new(0, 0, 0, 0)
-logScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+logScroll.BackgroundColor3 = THEME.Surface
 logScroll.BorderSizePixel = 0
 logScroll.ScrollBarThickness = 8
 logScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
@@ -447,8 +688,9 @@ logCorner.CornerRadius = UDim.new(0, 8)
 logCorner.Parent = logScroll
 
 local logStroke = Instance.new("UIStroke")
-logStroke.Color = Color3.fromRGB(60, 60, 60)
+logStroke.Color = THEME.Border
 logStroke.Thickness = 1
+logStroke.Transparency = 0.35
 logStroke.Parent = logScroll
 
 logScroll.Parent = outputInner
@@ -523,6 +765,16 @@ local function setButtonsEnabled(enabled)
 		end
 
 		btn.TextTransparency = isActive and 0 or 0.25
+	end
+
+	if enabled then
+		statusPill.Text = "READY"
+		statusPill.BackgroundColor3 = THEME.Surface
+		statusStroke.Color = THEME.Border
+	else
+		statusPill.Text = "WORKING"
+		statusPill.BackgroundColor3 = brighten(THEME.Primary, 0.35)
+		statusStroke.Color = THEME.Primary
 	end
 
 	setVisual(generateBtn, enabled)
