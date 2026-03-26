@@ -690,6 +690,9 @@ redoBtn.Active = false
 local outputPanel = addPanel(rootScroll, 0)
 outputPanel.LayoutOrder = 3
 outputPanel.AutomaticSize = Enum.AutomaticSize.Y
+outputPanel.Visible = false
+outputPanel.AutomaticSize = Enum.AutomaticSize.None
+outputPanel.Size = UDim2.new(1, 0, 0, 0)
 
 local outputLayout = Instance.new("UIListLayout")
 outputLayout.FillDirection = Enum.FillDirection.Vertical
