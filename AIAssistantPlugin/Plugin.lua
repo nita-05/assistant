@@ -21,99 +21,334 @@ end)
 -- UI ROOT
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, 0, 1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BackgroundColor3 = Color3.fromRGB(43, 43, 43) -- #2B2B2B
 frame.BorderSizePixel = 0
 frame.Parent = widget
 
+local rootPadding = Instance.new("UIPadding")
+rootPadding.PaddingTop = UDim.new(0, 10)
+rootPadding.PaddingBottom = UDim.new(0, 10)
+rootPadding.PaddingLeft = UDim.new(0, 10)
+rootPadding.PaddingRight = UDim.new(0, 10)
+rootPadding.Parent = frame
+
+local rootLayout = Instance.new("UIListLayout")
+rootLayout.FillDirection = Enum.FillDirection.Vertical
+rootLayout.SortOrder = Enum.SortOrder.LayoutOrder
+rootLayout.Padding = UDim.new(0, 10)
+rootLayout.Parent = frame
+
+local function addPanel(parent, height)
+	local panel = Instance.new("Frame")
+	panel.BackgroundColor3 = Color3.fromRGB(49, 49, 49) -- #313131
+	panel.BorderSizePixel = 0
+	panel.Size = UDim2.new(1, 0, 0, height)
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+	stroke.Thickness = 1
+	stroke.Parent = panel
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = panel
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 10)
+	padding.PaddingBottom = UDim.new(0, 10)
+	padding.PaddingLeft = UDim.new(0, 10)
+	padding.PaddingRight = UDim.new(0, 10)
+	padding.Parent = panel
+
+	panel.Parent = parent
+	return panel
+end
+
+local function addSectionLabel(parent, text)
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, 0, 0, 18)
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
+	label.TextTransparency = 0.1
+	label.Font = Enum.Font.SourceSansSemibold
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = parent
+	return label
+end
+
+local function brighten(color, factor)
+	return Color3.new(
+		math.clamp(color.R * factor, 0, 1),
+		math.clamp(color.G * factor, 0, 1),
+		math.clamp(color.B * factor, 0, 1)
+	)
+end
+
+local function applyHover(btn, baseColor)
+	btn.AutoButtonColor = false
+	btn:SetAttribute("BaseColor", baseColor)
+	btn.BackgroundColor3 = baseColor
+
+	btn.MouseEnter:Connect(function()
+		if btn.Active then
+			btn.BackgroundColor3 = brighten(baseColor, 1.08)
+		end
+	end)
+	btn.MouseLeave:Connect(function()
+		local bc = btn:GetAttribute("BaseColor")
+		if typeof(bc) == "Color3" then
+			btn.BackgroundColor3 = bc
+		else
+			btn.BackgroundColor3 = baseColor
+		end
+	end)
+end
+
+local function styleButton(btn, baseColor)
+	btn.BackgroundColor3 = baseColor
+	btn.BorderSizePixel = 0
+	btn.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
+	btn.Font = Enum.Font.SourceSansSemibold
+	btn.TextSize = 15
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = btn
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+	stroke.Thickness = 1
+	stroke.Parent = btn
+
+	applyHover(btn, baseColor)
+end
+
 local title = Instance.new("TextLabel")
 title.Text = "AI Game Builder"
-title.Size = UDim2.new(1, 0, 0, 40)
+title.Size = UDim2.new(1, 0, 0, 28)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.LayoutOrder = 1
 title.Parent = frame
+
+local headerDivider = Instance.new("Frame")
+headerDivider.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+headerDivider.BorderSizePixel = 0
+headerDivider.Size = UDim2.new(1, 0, 0, 1)
+headerDivider.LayoutOrder = 2
+headerDivider.Parent = frame
+
+local promptPanel = addPanel(frame, 120)
+promptPanel.LayoutOrder = 3
+
+local promptLayout = Instance.new("UIListLayout")
+promptLayout.FillDirection = Enum.FillDirection.Vertical
+promptLayout.SortOrder = Enum.SortOrder.LayoutOrder
+promptLayout.Padding = UDim.new(0, 8)
+promptLayout.Parent = promptPanel
+
+addSectionLabel(promptPanel, "Prompt").LayoutOrder = 1
 
 local promptBox = Instance.new("TextBox")
 promptBox.PlaceholderText = "Describe your game"
 promptBox.Text = ""
-promptBox.Size = UDim2.new(1, -20, 0, 54)
-promptBox.Position = UDim2.new(0, 10, 0, 50)
-promptBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-promptBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+promptBox.Size = UDim2.new(1, 0, 0, 72)
+promptBox.Position = UDim2.new(0, 0, 0, 0)
+promptBox.BackgroundColor3 = Color3.fromRGB(43, 43, 43) -- slightly darker input
+promptBox.TextColor3 = Color3.fromRGB(237, 237, 237) -- #EDEDED
 promptBox.ClearTextOnFocus = false
 promptBox.TextWrapped = true
 promptBox.TextXAlignment = Enum.TextXAlignment.Left
 promptBox.TextYAlignment = Enum.TextYAlignment.Top
-promptBox.Parent = frame
+promptBox.Font = Enum.Font.SourceSans
+promptBox.TextSize = 14
+promptBox.LayoutOrder = 2
+
+promptBox.MultiLine = true
+
+local promptPadding = Instance.new("UIPadding")
+promptPadding.PaddingTop = UDim.new(0, 8)
+promptPadding.PaddingBottom = UDim.new(0, 8)
+promptPadding.PaddingLeft = UDim.new(0, 8)
+promptPadding.PaddingRight = UDim.new(0, 8)
+promptPadding.Parent = promptBox
+
+local promptStroke = Instance.new("UIStroke")
+promptStroke.Color = Color3.fromRGB(60, 60, 60) -- #3C3C3C
+promptStroke.Thickness = 1
+promptStroke.Parent = promptBox
+
+local promptCorner = Instance.new("UICorner")
+promptCorner.CornerRadius = UDim.new(0, 8)
+promptCorner.Parent = promptBox
+
+promptBox.Parent = promptPanel
+
+local actionsPanel = addPanel(frame, 164)
+actionsPanel.LayoutOrder = 4
+
+local actionsLayout = Instance.new("UIListLayout")
+actionsLayout.FillDirection = Enum.FillDirection.Vertical
+actionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+actionsLayout.Padding = UDim.new(0, 8)
+actionsLayout.Parent = actionsPanel
+
+addSectionLabel(actionsPanel, "Actions").LayoutOrder = 1
 
 local generateBtn = Instance.new("TextButton")
 generateBtn.Text = "Generate"
-generateBtn.Size = UDim2.new(0.33, -10, 0, 36)
-generateBtn.Position = UDim2.new(0, 10, 0, 110)
-generateBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-generateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-generateBtn.Parent = frame
+generateBtn.Size = UDim2.new(1, 0, 0, 38)
+generateBtn.Position = UDim2.new(0, 0, 0, 0)
+generateBtn.LayoutOrder = 2
+styleButton(generateBtn, Color3.fromRGB(10, 132, 255)) -- #0A84FF
+generateBtn.TextSize = 16
+generateBtn.Parent = actionsPanel
+
+local secondaryRow = Instance.new("Frame")
+secondaryRow.BackgroundTransparency = 1
+secondaryRow.Size = UDim2.new(1, 0, 0, 34)
+secondaryRow.LayoutOrder = 3
+secondaryRow.Parent = actionsPanel
+
+local secondaryLayout = Instance.new("UIListLayout")
+secondaryLayout.FillDirection = Enum.FillDirection.Horizontal
+secondaryLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+secondaryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+secondaryLayout.Padding = UDim.new(0, 8)
+secondaryLayout.Parent = secondaryRow
 
 local refineBtn = Instance.new("TextButton")
 refineBtn.Text = "Refine"
-refineBtn.Size = UDim2.new(0.34, -10, 0, 36)
-refineBtn.Position = UDim2.new(0.33, 5, 0, 110)
-refineBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-refineBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-refineBtn.Parent = frame
+refineBtn.Size = UDim2.new(0.5, -4, 0, 34)
+refineBtn.Position = UDim2.new(0, 0, 0, 0)
+refineBtn.LayoutOrder = 1
+styleButton(refineBtn, Color3.fromRGB(70, 70, 70))
+refineBtn.Parent = secondaryRow
 
 local planBtn = Instance.new("TextButton")
 planBtn.Text = "Plan"
-planBtn.Size = UDim2.new(0.33, -10, 0, 36)
-planBtn.Position = UDim2.new(0.66, 0, 0, 110)
-planBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
-planBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-planBtn.Parent = frame
+planBtn.Size = UDim2.new(0.5, -4, 0, 34)
+planBtn.Position = UDim2.new(0, 0, 0, 0)
+planBtn.LayoutOrder = 2
+styleButton(planBtn, Color3.fromRGB(70, 70, 70))
+planBtn.Parent = secondaryRow
+
+local controlRow = Instance.new("Frame")
+controlRow.BackgroundTransparency = 1
+controlRow.Size = UDim2.new(1, 0, 0, 30)
+controlRow.LayoutOrder = 4
+controlRow.Parent = actionsPanel
+
+local controlLayout = Instance.new("UIListLayout")
+controlLayout.FillDirection = Enum.FillDirection.Horizontal
+controlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+controlLayout.SortOrder = Enum.SortOrder.LayoutOrder
+controlLayout.Padding = UDim.new(0, 8)
+controlLayout.Parent = controlRow
+
+local controlLabel = Instance.new("TextLabel")
+controlLabel.BackgroundTransparency = 1
+controlLabel.Size = UDim2.new(1, 0, 0, 14)
+controlLabel.Text = ""
+controlLabel.LayoutOrder = 5
+controlLabel.Parent = actionsPanel
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Text = "Clear Build"
-clearBtn.Size = UDim2.new(1, -20, 0, 28)
-clearBtn.Position = UDim2.new(0, 10, 0, 150)
-clearBtn.BackgroundColor3 = Color3.fromRGB(110, 45, 45)
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Parent = frame
+clearBtn.Size = UDim2.new(0.5, -4, 0, 30)
+clearBtn.Position = UDim2.new(0, 0, 0, 0)
+clearBtn.LayoutOrder = 2
+styleButton(clearBtn, Color3.fromRGB(92, 32, 32)) -- dark red
+clearBtn.Parent = controlRow
 
 local stopBtn = Instance.new("TextButton")
 stopBtn.Text = "Stop"
-stopBtn.Size = UDim2.new(1, -20, 0, 28)
-stopBtn.Position = UDim2.new(0, 10, 0, 182)
-stopBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
-stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopBtn.Parent = frame
+stopBtn.Size = UDim2.new(0.5, -4, 0, 30)
+stopBtn.Position = UDim2.new(0, 0, 0, 0)
+stopBtn.LayoutOrder = 1
+styleButton(stopBtn, Color3.fromRGB(70, 70, 70))
+stopBtn.Parent = controlRow
+
+local historyRow = Instance.new("Frame")
+historyRow.BackgroundTransparency = 1
+historyRow.Size = UDim2.new(1, 0, 0, 30)
+historyRow.LayoutOrder = 6
+historyRow.Parent = actionsPanel
+
+local historyLayout = Instance.new("UIListLayout")
+historyLayout.FillDirection = Enum.FillDirection.Horizontal
+historyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+historyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+historyLayout.Padding = UDim.new(0, 8)
+historyLayout.Parent = historyRow
 
 local undoBtn = Instance.new("TextButton")
 undoBtn.Text = "Undo"
-undoBtn.Size = UDim2.new(0.5, -12, 0, 28)
-undoBtn.Position = UDim2.new(0, 10, 0, 214)
-undoBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-undoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-undoBtn.Parent = frame
+undoBtn.Size = UDim2.new(0.5, -4, 0, 30)
+undoBtn.Position = UDim2.new(0, 0, 0, 0)
+undoBtn.LayoutOrder = 1
+styleButton(undoBtn, Color3.fromRGB(70, 70, 70))
+undoBtn.Parent = historyRow
 
 local redoBtn = Instance.new("TextButton")
 redoBtn.Text = "Redo"
-redoBtn.Size = UDim2.new(0.5, -12, 0, 28)
-redoBtn.Position = UDim2.new(0.5, 2, 0, 214)
-redoBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-redoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-redoBtn.Parent = frame
+redoBtn.Size = UDim2.new(0.5, -4, 0, 30)
+redoBtn.Position = UDim2.new(0, 0, 0, 0)
+redoBtn.LayoutOrder = 2
+styleButton(redoBtn, Color3.fromRGB(70, 70, 70))
+redoBtn.Parent = historyRow
+
+local outputPanel = addPanel(frame, 0)
+outputPanel.LayoutOrder = 5
+outputPanel.AutomaticSize = Enum.AutomaticSize.Y
+
+local outputLayout = Instance.new("UIListLayout")
+outputLayout.FillDirection = Enum.FillDirection.Vertical
+outputLayout.SortOrder = Enum.SortOrder.LayoutOrder
+outputLayout.Padding = UDim.new(0, 8)
+outputLayout.Parent = outputPanel
+
+addSectionLabel(outputPanel, "Output").LayoutOrder = 1
+
+local outputInner = Instance.new("Frame")
+outputInner.BackgroundTransparency = 1
+outputInner.Size = UDim2.new(1, 0, 1, 0)
+outputInner.LayoutOrder = 2
+outputInner.Parent = outputPanel
+
+local outputInnerLayout = Instance.new("UIListLayout")
+outputInnerLayout.FillDirection = Enum.FillDirection.Vertical
+outputInnerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+outputInnerLayout.Padding = UDim.new(0, 8)
+outputInnerLayout.Parent = outputInner
 
 local planScroll = Instance.new("ScrollingFrame")
 planScroll.Name = "PlanScroll"
-planScroll.Size = UDim2.new(1, -20, 0, 110)
-planScroll.Position = UDim2.new(0, 10, 0, 246)
-planScroll.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+planScroll.Size = UDim2.new(1, 0, 0, 120)
+planScroll.Position = UDim2.new(0, 0, 0, 0)
+planScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
 planScroll.BorderSizePixel = 0
 planScroll.ScrollBarThickness = 6
 planScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 planScroll.Active = true
 planScroll.ScrollingEnabled = true
-planScroll.Parent = frame
+planScroll.LayoutOrder = 1
+
+local planCorner = Instance.new("UICorner")
+planCorner.CornerRadius = UDim.new(0, 8)
+planCorner.Parent = planScroll
+
+local planStroke = Instance.new("UIStroke")
+planStroke.Color = Color3.fromRGB(60, 60, 60)
+planStroke.Thickness = 1
+planStroke.Parent = planScroll
+
+planScroll.Parent = outputInner
 
 local planBox = Instance.new("TextLabel")
 planBox.Name = "PlanLabel"
@@ -121,7 +356,8 @@ planBox.Text = "Plan will appear here..."
 planBox.Size = UDim2.new(1, -12, 0, 0)
 planBox.Position = UDim2.new(0, 6, 0, 6)
 planBox.BackgroundTransparency = 1
-planBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+planBox.TextColor3 = Color3.fromRGB(237, 237, 237)
+planBox.TextTransparency = 0.15
 planBox.TextWrapped = true
 planBox.TextXAlignment = Enum.TextXAlignment.Left
 planBox.TextYAlignment = Enum.TextYAlignment.Top
@@ -131,22 +367,34 @@ planBox.AutomaticSize = Enum.AutomaticSize.Y
 planBox.Parent = planScroll
 
 local logScroll = Instance.new("ScrollingFrame")
-logScroll.Size = UDim2.new(1, -20, 1, -310)
-logScroll.Position = UDim2.new(0, 10, 0, 366)
-logScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+logScroll.Size = UDim2.new(1, 0, 0, 220)
+logScroll.Position = UDim2.new(0, 0, 0, 0)
+logScroll.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
 logScroll.BorderSizePixel = 0
 logScroll.ScrollBarThickness = 6
 logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 logScroll.Active = true
 logScroll.ScrollingEnabled = true
-logScroll.Parent = frame
+logScroll.LayoutOrder = 2
+
+local logCorner = Instance.new("UICorner")
+logCorner.CornerRadius = UDim.new(0, 8)
+logCorner.Parent = logScroll
+
+local logStroke = Instance.new("UIStroke")
+logStroke.Color = Color3.fromRGB(60, 60, 60)
+logStroke.Thickness = 1
+logStroke.Parent = logScroll
+
+logScroll.Parent = outputInner
 
 local logBox = Instance.new("TextLabel")
 logBox.Text = "Logs..."
 logBox.Size = UDim2.new(1, -12, 0, 0)
 logBox.Position = UDim2.new(0, 6, 0, 6)
 logBox.BackgroundTransparency = 1
-logBox.TextColor3 = Color3.fromRGB(150, 255, 150)
+logBox.TextColor3 = Color3.fromRGB(237, 237, 237)
+logBox.TextTransparency = 0.05
 logBox.TextWrapped = true
 logBox.TextXAlignment = Enum.TextXAlignment.Left
 logBox.TextYAlignment = Enum.TextYAlignment.Top
@@ -201,20 +449,25 @@ local function appendLog(line)
 end
 
 local function setButtonsEnabled(enabled)
-	generateBtn.Active = enabled
-	generateBtn.AutoButtonColor = enabled
-	refineBtn.Active = enabled
-	refineBtn.AutoButtonColor = enabled
-	planBtn.Active = enabled
-	planBtn.AutoButtonColor = enabled
-	clearBtn.Active = enabled
-	clearBtn.AutoButtonColor = enabled
-	stopBtn.Active = not enabled
-	stopBtn.AutoButtonColor = not enabled
-	undoBtn.Active = enabled and (#undoStack > 0)
-	undoBtn.AutoButtonColor = undoBtn.Active
-	redoBtn.Active = enabled and (#redoStack > 0)
-	redoBtn.AutoButtonColor = redoBtn.Active
+	local function setVisual(btn, isActive)
+		btn.Active = isActive
+
+		local bc = btn:GetAttribute("BaseColor")
+		if typeof(bc) == "Color3" then
+			btn.BackgroundColor3 = isActive and bc or brighten(bc, 0.82)
+		end
+
+		btn.TextTransparency = isActive and 0 or 0.25
+	end
+
+	setVisual(generateBtn, enabled)
+	setVisual(refineBtn, enabled)
+	setVisual(planBtn, enabled)
+	setVisual(clearBtn, enabled)
+	setVisual(stopBtn, not enabled)
+
+	setVisual(undoBtn, enabled and (#undoStack > 0))
+	setVisual(redoBtn, enabled and (#redoStack > 0))
 end
 
 local function inPlayClientMode()
