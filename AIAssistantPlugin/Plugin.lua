@@ -1751,6 +1751,55 @@ planBtn.MouseButton1Click:Connect(function()
 	setButtonsEnabled(true)
 end)
 
+local function guessAssetStyleFromPrompt(promptText)
+	local p = string.lower(tostring(promptText or ""))
+	-- Heuristic: if user asks for stylized/cartoon/pixel/low-poly, bias asset search.
+	if string.find(p, "cartoon", 1, true)
+		or string.find(p, "stylized", 1, true)
+		or string.find(p, "pixel", 1, true)
+		or string.find(p, "low poly", 1, true)
+	then
+		return "cartoon"
+	end
+	return "realistic"
+end
+
+local function autoImportToolboxEnvironmentAssets(gamePromptText, requestToken)
+	if cancelToken ~= requestToken then
+		return
+	end
+
+	local assetStyle = guessAssetStyleFromPrompt(gamePromptText)
+
+	-- Nudge the keyword extractor to focus on "environment / set dressing" assets.
+	-- The backend turns this into Toolbox search keyword phrases and returns matching asset IDs.
+	local envPrompt = tostring(gamePromptText or "") .. "\n\nEnvironment focus: choose the best scenery/set-dressing props for this game (terrain/landscaping, decor, walls/structures, lighting, atmosphere)."
+
+	local data, err = requestWithTimeout(API_BASE .. "/generate-assets", {
+		prompt = envPrompt,
+		style = assetStyle,
+		regenerate = false,
+		maxAssets = 12,
+	}, 45)
+
+	if cancelToken ~= requestToken then
+		return
+	end
+
+	if err then
+		appendLog("Auto-toolbox import failed: " .. err)
+		return
+	end
+
+	if type(data) == "table" and data.success ~= false and type(data.assets) == "table" then
+		local placed = insertMergedAssetsIntoGenerated(data.assets)
+		appendLog(("Auto-toolbox: placed %d environment asset(s)."):format(placed))
+		return
+	end
+
+	appendLog("Auto-toolbox import returned no assets.")
+end
+
 generateBtn.MouseButton1Click:Connect(function()
 	if inPlayClientMode() then
 		setLog("Generate works only in Edit mode. Stop Play and try again.")
@@ -1792,6 +1841,8 @@ generateBtn.MouseButton1Click:Connect(function()
 			promptBox.Text = ""
 			promptBox.PlaceholderText = "Type refine instruction, then click Refine"
 			appendLog("Done. " .. msg)
+			appendLog("Analyzing environment and importing toolbox assets...")
+			autoImportToolboxEnvironmentAssets(prompt, myToken)
 		else
 			appendLog("Structured build failed: " .. tostring(msg))
 		end
@@ -1850,6 +1901,9 @@ refineBtn.MouseButton1Click:Connect(function()
 			promptBox.Text = ""
 			promptBox.PlaceholderText = "Type next refine instruction, then click Refine"
 			appendLog("Done. " .. msg)
+			appendLog("Updating environment and importing toolbox assets...")
+			-- Refine instruction may change environment needs, so include it in the asset prompt.
+			autoImportToolboxEnvironmentAssets(lastPrompt .. "\n\nRefine instruction: " .. instruction, myToken)
 		else
 			appendLog("Structured build failed: " .. tostring(msg))
 		end
