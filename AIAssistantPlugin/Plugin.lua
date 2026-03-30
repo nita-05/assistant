@@ -1183,6 +1183,45 @@ local function insertMergedAssetsIntoGenerated(assetList)
 	return placed
 end
 
+-- Structured build mode inserts into AI_Build; this keeps toolbox assets in the same area.
+local function insertAssetsIntoAiBuild(assetList)
+	if type(assetList) ~= "table" then
+		return 0
+	end
+	local folders = ensureAiFolders()
+	local assetsFolder = getOrCreateFolder(folders.workspace, "Assets")
+	local placed = 0
+	for _, aid in ipairs(assetList) do
+		local id = nil
+		if type(aid) == "number" and aid > 0 then
+			id = aid
+		elseif type(aid) == "string" then
+			id = tonumber(aid)
+		end
+		if id then
+			local okPack, pack = pcall(function()
+				return InsertService:LoadAsset(id)
+			end)
+			if okPack and pack then
+				local child = pack:GetChildren()[1]
+				if child then
+					stripImportedScripts(child)
+					child.Name = "ToolboxAsset_" .. tostring(id)
+					child.Parent = assetsFolder
+					placed += 1
+					layoutInsertedModel(child, placed)
+				else
+					appendLog(("Toolbox: empty package for %s"):format(tostring(id)))
+				end
+				pack:Destroy()
+			else
+				appendLog(("Toolbox: LoadAsset failed for %s"):format(tostring(id)))
+			end
+		end
+	end
+	return placed
+end
+
 local function removeHybridScriptsByNames(names)
 	if type(names) ~= "table" then
 		return
@@ -1792,8 +1831,8 @@ local function autoImportToolboxEnvironmentAssets(gamePromptText, requestToken)
 	end
 
 	if type(data) == "table" and data.success ~= false and type(data.assets) == "table" then
-		local placed = insertMergedAssetsIntoGenerated(data.assets)
-		appendLog(("Auto-toolbox: placed %d environment asset(s)."):format(placed))
+		local placed = insertAssetsIntoAiBuild(data.assets)
+		appendLog(("Auto-toolbox: placed %d environment asset(s) into AI_Build/Assets."):format(placed))
 		return
 	end
 
