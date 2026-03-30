@@ -33,7 +33,10 @@ Rules:
 
     const model = process.env.ASSET_KEYWORD_MODEL || models.CHAT;
 
-    const res = await openai.chat.completions.create({
+    // Some models/modes reject custom temperature values.
+    // If that happens, retry without temperature so the API default is used.
+    let res;
+    const initialParams = {
         model,
         temperature: regenerate ? 0.85 : 0.35,
         response_format: { type: "json_object" },
@@ -41,7 +44,23 @@ Rules:
             { role: "system", content: system },
             { role: "user", content: userContent },
         ],
-    });
+    };
+    try {
+        res = await openai.chat.completions.create(initialParams);
+    } catch (e) {
+        const msg = String((e && e.message) || e || "");
+        const lower = msg.toLowerCase();
+        if (lower.includes("temperature") && (lower.includes("does not support") || lower.includes("unsupported"))) {
+            const fallbackParams = {
+                model,
+                response_format: { type: "json_object" },
+                messages: initialParams.messages,
+            };
+            res = await openai.chat.completions.create(fallbackParams);
+        } else {
+            throw e;
+        }
+    }
 
     const raw = stripCodeFences(res.choices[0]?.message?.content || "");
     const parsed = safeJsonParse(raw);
