@@ -5,11 +5,71 @@ const OpenAI = require("openai");
 const models = require("./config/models");
 
 const app = express();
-app.use(cors());
+const allowedOrigins = String(process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+app.use(
+    cors({
+        origin: (origin, cb) => {
+            // Allow non-browser clients (no Origin header) like Roblox Studio.
+            if (!origin) return cb(null, true);
+            if (allowedOrigins.length === 0) return cb(null, true);
+            return cb(null, allowedOrigins.includes(origin));
+        },
+    })
+);
 app.use(express.json());
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
+});
+
+// ---- Security (required for a paid/public plugin) ----
+const BACKEND_API_KEY = String(process.env.BACKEND_API_KEY || "").trim();
+if (!BACKEND_API_KEY) {
+    console.warn("[security] BACKEND_API_KEY is not set. All API routes are public.");
+}
+
+function isPublicRoute(req) {
+    return req.path === "/" || req.path === "/health";
+}
+
+// Basic in-memory rate limiter (per IP, per minute)
+const RATE_WINDOW_MS = Number(process.env.RATE_WINDOW_MS || 60_000);
+const RATE_MAX = Number(process.env.RATE_MAX || 120);
+/** @type {Map<string, { resetAt: number, count: number }>} */
+const rate = new Map();
+
+app.use((req, res, next) => {
+    if (isPublicRoute(req)) return next();
+
+    const now = Date.now();
+    const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown");
+    const key = ip.split(",")[0].trim();
+    const entry = rate.get(key);
+    if (!entry || now >= entry.resetAt) {
+        rate.set(key, { resetAt: now + RATE_WINDOW_MS, count: 1 });
+        return next();
+    }
+
+    entry.count += 1;
+    if (entry.count > RATE_MAX) {
+        return res.status(429).json({ success: false, error: "rate_limited" });
+    }
+    return next();
+});
+
+// API key auth (send via header: X-API-Key)
+app.use((req, res, next) => {
+    if (isPublicRoute(req)) return next();
+    if (!BACKEND_API_KEY) return next();
+
+    const got = String(req.get("x-api-key") || "");
+    if (!got || got !== BACKEND_API_KEY) {
+        return res.status(401).json({ success: false, error: "unauthorized" });
+    }
+    return next();
 });
 
 app.get("/", (req, res) => {
