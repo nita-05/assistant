@@ -920,10 +920,6 @@ local function startProgress(prefix)
 end
 
 local function postJson(url, body)
-	if HttpService.HttpEnabled == false then
-		return nil, "HTTP requests are disabled. Enable them in Game Settings → Security → Allow HTTP Requests."
-	end
-
 	local headers = {
 		["Content-Type"] = "application/json",
 	}
@@ -937,7 +933,18 @@ local function postJson(url, body)
 		})
 	end)
 	if not ok then
-		return nil, tostring(resp)
+		local msg = tostring(resp)
+		local lower = string.lower(msg)
+		-- In Studio, HttpService.HttpEnabled can be stale/false even after toggling.
+		-- Prefer detecting the real platform error and guiding the user.
+		if string.find(lower, "http requests are not enabled", 1, true)
+			or string.find(lower, "http requests are disabled", 1, true)
+			or string.find(lower, "httprequestsaredisabled", 1, true)
+		then
+			return nil,
+				"HTTP requests are disabled. In Roblox Studio open Game Settings → Security → enable Allow HTTP Requests, click Save, then restart Studio."
+		end
+		return nil, msg
 	end
 	if type(resp) ~= "table" then
 		return nil, "Invalid HTTP response"
