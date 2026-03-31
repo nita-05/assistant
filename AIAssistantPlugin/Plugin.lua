@@ -539,114 +539,8 @@ end)
 
 promptBox.Parent = promptPanel
 
--- Backend / API settings (publish-safe: configurable + saved)
-local settingsPanel = addPanel(rootScroll, 0)
-settingsPanel.LayoutOrder = 2
-settingsPanel.AutomaticSize = Enum.AutomaticSize.Y
-
-local settingsLayout = Instance.new("UIListLayout")
-settingsLayout.FillDirection = Enum.FillDirection.Vertical
-settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-settingsLayout.Padding = UDim.new(0, 6)
-settingsLayout.Parent = settingsPanel
-
-addSectionLabel(settingsPanel, "Settings").LayoutOrder = 1
-
-local function safeGetSetting(key, defaultValue)
-	local ok, v = pcall(function()
-		return plugin:GetSetting(key)
-	end)
-	if ok and v ~= nil then
-		return v
-	end
-	return defaultValue
-end
-
-local function safeSetSetting(key, value)
-	pcall(function()
-		plugin:SetSetting(key, value)
-	end)
-end
-
-local apiBaseBox = Instance.new("TextBox")
-apiBaseBox.PlaceholderText = "API Base URL (e.g. https://your-backend.com)"
-apiBaseBox.Text = tostring(safeGetSetting("AIAssistant.ApiBase", "https://assistant-3alw.onrender.com"))
-apiBaseBox.Size = UDim2.new(1, 0, 0, 34)
-apiBaseBox.BackgroundColor3 = THEME.Surface
-apiBaseBox.TextColor3 = THEME.Text
-apiBaseBox.ClearTextOnFocus = false
-apiBaseBox.TextWrapped = false
-apiBaseBox.TextXAlignment = Enum.TextXAlignment.Left
-apiBaseBox.Font = Enum.Font.SourceSans
-apiBaseBox.TextSize = 14
-apiBaseBox.LayoutOrder = 2
-
-local apiBasePad = Instance.new("UIPadding")
-apiBasePad.PaddingLeft = UDim.new(0, 8)
-apiBasePad.PaddingRight = UDim.new(0, 8)
-apiBasePad.Parent = apiBaseBox
-
-local apiBaseStroke = Instance.new("UIStroke")
-apiBaseStroke.Color = THEME.Border
-apiBaseStroke.Thickness = 1
-apiBaseStroke.Transparency = 0.35
-apiBaseStroke.Parent = apiBaseBox
-
-local apiBaseCorner = Instance.new("UICorner")
-apiBaseCorner.CornerRadius = UDim.new(0, 8)
-apiBaseCorner.Parent = apiBaseBox
-
-apiBaseBox.Parent = settingsPanel
-
-local apiKeyBox = Instance.new("TextBox")
-apiKeyBox.PlaceholderText = "API Key (X-API-Key)"
-apiKeyBox.Text = tostring(safeGetSetting("AIAssistant.ApiKey", ""))
-apiKeyBox.Size = UDim2.new(1, 0, 0, 34)
-apiKeyBox.BackgroundColor3 = THEME.Surface
-apiKeyBox.TextColor3 = THEME.Text
-apiKeyBox.ClearTextOnFocus = false
-apiKeyBox.TextWrapped = false
-apiKeyBox.TextXAlignment = Enum.TextXAlignment.Left
-apiKeyBox.Font = Enum.Font.SourceSans
-apiKeyBox.TextSize = 14
-apiKeyBox.LayoutOrder = 3
-
-local apiKeyPad = Instance.new("UIPadding")
-apiKeyPad.PaddingLeft = UDim.new(0, 8)
-apiKeyPad.PaddingRight = UDim.new(0, 8)
-apiKeyPad.Parent = apiKeyBox
-
-local apiKeyStroke = Instance.new("UIStroke")
-apiKeyStroke.Color = THEME.Border
-apiKeyStroke.Thickness = 1
-apiKeyStroke.Transparency = 0.35
-apiKeyStroke.Parent = apiKeyBox
-
-local apiKeyCorner = Instance.new("UICorner")
-apiKeyCorner.CornerRadius = UDim.new(0, 8)
-apiKeyCorner.Parent = apiKeyBox
-
-apiKeyBox.Parent = settingsPanel
-
-local saveSettingsBtn = Instance.new("TextButton")
-saveSettingsBtn.Text = "Save Settings"
-saveSettingsBtn.Size = UDim2.new(1, 0, 0, 34)
-saveSettingsBtn.LayoutOrder = 4
-styleButton(saveSettingsBtn, Color3.fromRGB(33, 40, 64))
-saveSettingsBtn.Parent = settingsPanel
-
-saveSettingsBtn.MouseButton1Click:Connect(function()
-	local base = tostring(apiBaseBox.Text or ""):gsub("%s+", "")
-	if base ~= "" then
-		base = base:gsub("/+$", "")
-	end
-	safeSetSetting("AIAssistant.ApiBase", base)
-	safeSetSetting("AIAssistant.ApiKey", tostring(apiKeyBox.Text or ""))
-	setLog("Settings saved.")
-end)
-
 local actionsPanel = addPanel(rootScroll, 0)
-actionsPanel.LayoutOrder = 3
+actionsPanel.LayoutOrder = 2
 actionsPanel.AutomaticSize = Enum.AutomaticSize.Y
 
 local actionsLayout = Instance.new("UIListLayout")
@@ -919,16 +813,7 @@ local GENERATED_GAME_NAME = "GeneratedGame"
 local DEFAULT_API_BASE = "https://assistant-3alw.onrender.com"
 
 local function getApiBase()
-	local v = nil
-	pcall(function()
-		v = plugin:GetSetting("AIAssistant.ApiBase")
-	end)
-	v = tostring(v or DEFAULT_API_BASE)
-	v = v:gsub("%s+", ""):gsub("/+$", "")
-	if v == "" then
-		v = DEFAULT_API_BASE
-	end
-	return v
+	return DEFAULT_API_BASE
 end
 
 local function getApiKey()
