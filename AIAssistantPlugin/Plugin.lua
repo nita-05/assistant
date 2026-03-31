@@ -800,6 +800,7 @@ logBox.Parent = logScroll
 
 local HttpService = game:GetService("HttpService")
 local InsertService = game:GetService("InsertService")
+local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local StarterGui = game:GetService("StarterGui")
@@ -1014,6 +1015,33 @@ local function stripImportedScripts(rootInst)
 	end
 end
 
+local INSERTABLE_ASSET_TYPE_IDS = {
+	[Enum.AssetType.Model.Value] = true,
+}
+
+local function getInsertabilityInfo(assetId)
+	local okInfo, infoOrErr = pcall(function()
+		return MarketplaceService:GetProductInfo(assetId)
+	end)
+	if not okInfo or type(infoOrErr) ~= "table" then
+		return false, ("GetProductInfo failed: %s"):format(tostring(infoOrErr))
+	end
+
+	local assetTypeId = tonumber(infoOrErr.AssetTypeId)
+	if not assetTypeId then
+		return false, "Missing AssetTypeId"
+	end
+	if not INSERTABLE_ASSET_TYPE_IDS[assetTypeId] then
+		return false, ("Not insertable via InsertService (AssetTypeId=%s)"):format(tostring(assetTypeId))
+	end
+
+	if infoOrErr.IsForSale == false and infoOrErr.IsPublicDomain == false then
+		return false, "Not for sale / not public domain"
+	end
+
+	return true, nil
+end
+
 local function layoutInsertedModel(model, index)
 	local spacing = 16
 	local cols = 4
@@ -1052,6 +1080,12 @@ local function insertAssetsFromServerList(assetList)
 			id = tonumber(aid)
 		end
 		if id then
+			local okCheck, reason = getInsertabilityInfo(id)
+			if not okCheck then
+				appendLog(("Skipped asset %s: %s"):format(tostring(id), tostring(reason)))
+				continue
+			end
+
 			local okPack, pack = pcall(function()
 				return InsertService:LoadAsset(id)
 			end)
@@ -1070,6 +1104,7 @@ local function insertAssetsFromServerList(assetList)
 			else
 				appendLog(("LoadAsset failed for %s: %s"):format(tostring(id), tostring(pack)))
 			end
+			task.wait(0.15)
 		end
 	end
 	return placed, nil
@@ -1160,6 +1195,12 @@ local function insertMergedAssetsIntoGenerated(assetList)
 			id = tonumber(aid)
 		end
 		if id then
+			local okCheck, reason = getInsertabilityInfo(id)
+			if not okCheck then
+				appendLog(("Hybrid: skipped asset %s: %s"):format(tostring(id), tostring(reason)))
+				continue
+			end
+
 			local okPack, pack = pcall(function()
 				return InsertService:LoadAsset(id)
 			end)
@@ -1176,8 +1217,9 @@ local function insertMergedAssetsIntoGenerated(assetList)
 				end
 				pack:Destroy()
 			else
-				appendLog(("Hybrid: LoadAsset failed for %s"):format(tostring(id)))
+				appendLog(("Hybrid: LoadAsset failed for %s: %s"):format(tostring(id), tostring(pack)))
 			end
+			task.wait(0.15)
 		end
 	end
 	return placed
@@ -1199,6 +1241,12 @@ local function insertAssetsIntoAiBuild(assetList)
 			id = tonumber(aid)
 		end
 		if id then
+			local okCheck, reason = getInsertabilityInfo(id)
+			if not okCheck then
+				appendLog(("Toolbox: skipped asset %s: %s"):format(tostring(id), tostring(reason)))
+				continue
+			end
+
 			local okPack, pack = pcall(function()
 				return InsertService:LoadAsset(id)
 			end)
@@ -1215,8 +1263,9 @@ local function insertAssetsIntoAiBuild(assetList)
 				end
 				pack:Destroy()
 			else
-				appendLog(("Toolbox: LoadAsset failed for %s"):format(tostring(id)))
+				appendLog(("Toolbox: LoadAsset failed for %s: %s"):format(tostring(id), tostring(pack)))
 			end
+			task.wait(0.15)
 		end
 	end
 	return placed
@@ -1394,6 +1443,7 @@ local function runGamePlanExecution()
 			return
 		end
 		appendLog("Importing assets from plan keywords...")
+		local assetStyle = guessAssetStyleFromPrompt(promptText)
 		local assetLine = ""
 		if type(plan.assets) == "table" and #plan.assets > 0 then
 			assetLine = table.concat(plan.assets, ", ")
