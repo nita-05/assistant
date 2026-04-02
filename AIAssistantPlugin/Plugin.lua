@@ -412,7 +412,8 @@ brandV.Parent = brandBadge
 local titleStack = Instance.new("Frame")
 titleStack.Name = "TitleStack"
 titleStack.BackgroundTransparency = 1
-titleStack.Size = UDim2.new(1, -186, 1, 0)
+-- Leave room for the right-side control cluster.
+titleStack.Size = UDim2.new(1, -360, 1, 0)
 titleStack.LayoutOrder = 2
 titleStack.ZIndex = 11
 titleStack.Parent = headerContent
@@ -452,7 +453,8 @@ subtitle.Parent = titleStack
 local headerFill = Instance.new("Frame")
 headerFill.Name = "HeaderFill"
 headerFill.BackgroundTransparency = 1
-headerFill.Size = UDim2.new(1, 0, 1, 0)
+-- Spacer: keep 0-width so it doesn't push right controls off-screen.
+headerFill.Size = UDim2.new(0, 0, 1, 0)
 headerFill.LayoutOrder = 3
 headerFill.Parent = headerContent
 
@@ -740,7 +742,8 @@ do
 	headerLayout.FillDirection = Enum.FillDirection.Horizontal
 	headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	headerLayout.Padding = UDim.new(0, 6)
-	headerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Fill
+	-- Enum.HorizontalAlignment has no "Fill" (this was crashing the plugin UI build).
+	headerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	headerLayout.Parent = sidebarHeader
 
 	local scriptsTabBtn = Instance.new("TextButton")
