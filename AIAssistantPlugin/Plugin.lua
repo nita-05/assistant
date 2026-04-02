@@ -454,7 +454,8 @@ titleStackLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 titleStackLayout.Parent = titleStack
 
 local title = Instance.new("TextLabel")
-title.Text = "VibeCoder"
+-- Branding: V logo (left tile) + "ibeCoder" reads as one word "VibeCoder"
+title.Text = "ibeCoder"
 title.Size = UDim2.new(1, 0, 0, 22)
 title.BackgroundTransparency = 1
 title.TextColor3 = THEME.Text
@@ -505,9 +506,10 @@ headerRightLayout.Parent = headerRight
 local creditsValLabel = Instance.new("TextLabel")
 creditsValLabel.Name = "CreditsLabel"
 creditsValLabel.BackgroundTransparency = 1
-creditsValLabel.Size = UDim2.new(0, 95, 0, 22)
+-- Hide credits UI (pricing-ready internally, but not shown in header)
+creditsValLabel.Size = UDim2.new(0, 0, 0, 0)
 creditsValLabel.TextXAlignment = Enum.TextXAlignment.Left
-creditsValLabel.Text = "Credits: " .. tostring(credits)
+creditsValLabel.Text = ""
 creditsValLabel.TextColor3 = THEME.Muted
 creditsValLabel.TextTransparency = 0.15
 creditsValLabel.Font = Enum.Font.SourceSansSemibold
@@ -516,6 +518,7 @@ creditsValLabel.ZIndex = 12
 creditsValLabel.LayoutOrder = 1
 creditsValLabel.Parent = headerRight
 creditsLabel = creditsValLabel
+creditsValLabel.Visible = false
 
 local statusPill
 
@@ -525,7 +528,7 @@ statusPill.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
 statusPill.BorderSizePixel = 0
 statusPill.Size = UDim2.new(0, 86, 0, 22)
 statusPill.Position = UDim2.new(1, -92, 0, 0)
-statusPill.Text = "READY"
+statusPill.Text = ""
 statusPill.TextColor3 = THEME.Text
 statusPill.TextTransparency = 0.15
 statusPill.Font = Enum.Font.SourceSansSemibold
@@ -579,12 +582,20 @@ local function makeDropdownOption(parent, text)
 	local b = Instance.new("TextButton")
 	b.Text = text
 	b.BackgroundColor3 = THEME.Panel
+	b.BackgroundTransparency = 0
 	b.BorderSizePixel = 0
 	b.Size = UDim2.new(1, 0, 0, 26)
 	b.TextColor3 = THEME.Text
+	b.TextTransparency = 0
 	b.Font = Enum.Font.SourceSansSemibold
 	b.TextSize = 13
 	b.AutoButtonColor = true
+	-- Ensure options render above the popup background (overlay popups use high ZIndex)
+	local pz = 1
+	pcall(function()
+		pz = parent.ZIndex
+	end)
+	b.ZIndex = pz + 1
 	b.Parent = parent
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, 8)
@@ -737,8 +748,8 @@ memoryToggleBtn.MouseButton1Click:Connect(function()
 	setLog(memoryEnabled and "Memory enabled (UI-level)." or "Memory disabled.")
 end)
 
--- Optional Right Sidebar (collapsible)
-do
+-- Optional Right Sidebar (collapsible) — disabled
+if false then
 	local sidebarW = 180
 	local sidebarHPadTop = 64
 	local sidebarY = sidebarHPadTop
@@ -1049,6 +1060,37 @@ do
 	templatePopupLayout.Parent = templatePopup
 
 	local templateOpen = false
+	local lastTemplateAutofill = ""
+
+	local function templateStarterPrompt(t)
+		if t == "Obby" then
+			return table.concat({
+				"Build a fun ROBLOX obby with a clear start and finish.",
+				"Include checkpoints every 3-4 stages, a few kill/reset parts, and a win screen.",
+				"Style: dark neon vibe, soft glow lighting, readable UI.",
+			}, "\n")
+		elseif t == "Tycoon" then
+			return table.concat({
+				"Build a simple tycoon game with a money loop and upgrades.",
+				"Include: leaderstats cash, a dropper/collector system, and 3-5 purchasable upgrades.",
+				"Add a clean upgrade UI panel and basic progression pacing.",
+			}, "\n")
+		elseif t == "Simulator" then
+			return table.concat({
+				"Build a simulator game with a core loop and upgrades.",
+				"Include: leaderstats coins, a main action (click/collect/touch), and scaling rewards.",
+				"Add an upgrades UI and a simple objective list.",
+			}, "\n")
+		elseif t == "Shooter" then
+			return table.concat({
+				"Build a basic shooter arena with targets/enemies and a score loop.",
+				"Include: simple weapon tool, damage/health, cooldown, and a round objective.",
+				"Add a HUD (HP + Score) and a respawn-safe spawn area.",
+			}, "\n")
+		end
+		return ""
+	end
+
 	local function closeTemplate()
 		templateOpen = false
 		templatePopup.Visible = false
@@ -1057,6 +1099,22 @@ do
 		selectedTemplate = t
 		templateMain.Text = "Template: " .. tostring(t)
 		closeTemplate()
+
+		-- Auto-fill prompt when choosing a template (user can Enhance Prompt after).
+		local starter = templateStarterPrompt(t)
+		if t ~= "None" and starter ~= "" then
+			if promptBox.Text == "" or promptBox.Text == lastTemplateAutofill then
+				promptBox.Text = starter
+				lastTemplateAutofill = starter
+				promptBox.PlaceholderText = "Describe your game or feature..."
+			end
+		else
+			-- If switching back to None and the box only has the auto-fill, clear it.
+			if promptBox.Text ~= "" and promptBox.Text == lastTemplateAutofill then
+				promptBox.Text = ""
+			end
+			lastTemplateAutofill = ""
+		end
 	end
 
 	local templateOptions = { "None", "Obby", "Tycoon", "Simulator", "Shooter" }
@@ -1738,16 +1796,8 @@ local function setButtonsEnabled(enabled)
 		btn.TextTransparency = isActive and 0 or 0.25
 	end
 
-	if enabled then
-		statusPill.Text = "IDLE"
-		statusPill.BackgroundColor3 = THEME.Surface
-		statusStroke.Color = THEME.Border
-	else
-		statusPill.Text = "GENERATING"
-		statusPill.BackgroundColor3 = brighten(THEME.Primary, 0.35)
-		statusStroke.Color = THEME.Primary
-	end
-	statusPill.Visible = true
+	-- Status pill UI disabled (hide always)
+	statusPill.Visible = false
 
 	setVisual(generateBtn, enabled)
 	setVisual(refineBtn, enabled)
