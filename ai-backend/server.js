@@ -21,9 +21,14 @@ app.use(
 );
 app.use(express.json());
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+const OPENAI_API_KEY = String(process.env.OPENAI_API_KEY || "").trim();
+/** @type {import("openai").default | null} */
+let openai = null;
+if (OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+} else {
+    console.warn("[openai] OPENAI_API_KEY not set. AI routes will use fallbacks or return errors.");
+}
 
 // ---- Security (required for a paid/public plugin) ----
 const BACKEND_API_KEY = String(process.env.BACKEND_API_KEY || "").trim();
@@ -163,6 +168,26 @@ function quickPlanFromPrompt(prompt) {
     }
 
     return steps.join("\n");
+}
+
+function enhancePromptLocal(prompt, template) {
+    const p = String(prompt || "").trim();
+    const t = String(template || "None").trim();
+    const lines = [];
+    lines.push(`Goal: Build a Roblox game: ${p}`);
+    if (t && t !== "None") lines.push(`Template: ${t}`);
+    lines.push("Core loop: player spawns, plays the main mechanic, earns progress/score, can retry, and can win.");
+    lines.push("Key mechanics:");
+    lines.push("- Spawn/start area + clear instructions (ScreenGui).");
+    lines.push("- Main mechanic implementation with safe server scripts (no risky client-only calls).");
+    lines.push("- Fail/reset rules + respawn-safe handling.");
+    lines.push("- Win condition + win UI screen.");
+    lines.push("UI:");
+    lines.push("- HUD with score/progress + simple buttons if needed.");
+    lines.push("Constraints:");
+    lines.push("- No audio asset IDs; keep assets optional.");
+    lines.push("- Keep it MVP; clean organization under Workspace/ServerScriptService/StarterGui.");
+    return lines.join("\n");
 }
 
 function structuredTemplateBuildFromPrompt(prompt) {
@@ -1453,6 +1478,10 @@ app.post("/plan", async (req, res) => {
         return res.json({ plan: quickPlanFromPrompt(prompt) });
     }
 
+    if (!openai) {
+        return res.json({ plan: quickPlanFromPrompt(prompt) });
+    }
+
     const completion = await openai.chat.completions.create({
         model: plannerModel,
         messages: [
@@ -1471,6 +1500,72 @@ app.post("/plan", async (req, res) => {
     const plan = completion.choices[0].message.content;
 
     res.json({ plan });
+});
+
+app.post("/enhance-prompt", async (req, res) => {
+    const prompt = String(req.body.prompt || "").trim();
+    const template = String(req.body.template || "None").trim();
+    const modelTier = String(req.body.modelTier || "").toLowerCase();
+    const tier = modelTier == "fast" || modelTier == "balanced" || modelTier == "smart"
+        ? modelTier
+        : "balanced";
+
+    if (!prompt) {
+        return res.status(400).json({ success: false, error: "missing_prompt" });
+    }
+
+    const chatModel =
+        tier == "fast" ? models.FAST_CHAT :
+            tier == "balanced" ? models.BALANCED_CHAT :
+                models.SMART_CHAT;
+
+    if (!openai) {
+        return res.json({ prompt: enhancePromptLocal(prompt, template) });
+    }
+
+    const completion = await openai.chat.completions.create({
+        model: chatModel,
+        messages: [
+            {
+                role: "system",
+                content:
+                    "You rewrite Roblox game requests into a clear, Roblox-Studio-friendly build prompt.\n" +
+                    "Output ONLY the improved prompt text (no markdown fences, no extra commentary).\n" +
+                    "Make it concise but specific, using short sections and bullet-like lines.\n" +
+                    "Include: Goal, Core loop, Key mechanics, UI, Win/Fail conditions, Constraints.\n" +
+                    "Constraints: safe for Studio plugin execution; avoid copyrighted assets; avoid audio asset IDs; keep scope to an MVP.",
+            },
+            {
+                role: "user",
+                content:
+                    `Template: ${template}\n` +
+                    `Original prompt:\n${prompt}`,
+            },
+        ],
+    });
+
+    const enhancedPrompt = String(completion.choices?.[0]?.message?.content || "").trim();
+    return res.json({ prompt: enhancedPrompt || enhancePromptLocal(prompt, template) });
+});
+
+// Compatibility routes expected by the Studio plugin (avoid 404s).
+app.post("/generate-assets", async (req, res) => {
+    // This project version doesn't implement asset keyword->Toolbox ID retrieval yet.
+    // Return an empty list so the plugin can proceed without failing.
+    return res.json({ success: true, assets: [] });
+});
+
+app.post("/hybrid-generate", async (req, res) => {
+    // Hybrid mode isn't implemented in this backend; return an empty merge result.
+    return res.json({
+        success: true,
+        mode: "no-hybrid",
+        confidence: 0,
+        templates: [],
+        features: [],
+        merged: { scripts: [], assets: [] },
+        reason: "hybrid_not_supported_in_this_backend",
+    });
 });
 
 app.post("/generateStep", async (req, res) => {

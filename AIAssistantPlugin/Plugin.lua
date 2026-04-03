@@ -3079,13 +3079,13 @@ enhancePromptBtn.MouseButton1Click:Connect(function()
 		task.wait(0.12)
 		appendConsoleLine(("Selecting model: %s..."):format(tier:gsub("^%l", string.upper)), { typewriter = false })
 		task.wait(0.12)
-		appendConsoleLine("Generating scripts...", { typewriter = false })
+		appendConsoleLine("Improving prompt clarity...", { typewriter = false })
 		task.wait(0.18)
 	end
 
-	local data, err = requestWithTimeout(getApiBase() .. "/plan", {
+	local data, err = requestWithTimeout(getApiBase() .. "/enhance-prompt", {
 		prompt = promptRaw,
-		fast = false,
+		template = selectedTemplate,
 		modelTier = tier,
 	}, 25)
 
@@ -3099,26 +3099,19 @@ enhancePromptBtn.MouseButton1Click:Connect(function()
 		return
 	end
 
-	local planText = tostring(data.plan or "")
-	local guide = getTemplateMechanicsGuide()
-	local enhanced = promptRaw
-
-	if guide ~= "" then
-		enhanced = enhanced .. ("\n\nExpanded requirements for %s:\n%s"):format(selectedTemplate, guide)
+	local improved = ""
+	if type(data) == "table" then
+		improved = tostring(data.prompt or data.enhancedPrompt or "")
+	end
+	if improved == "" then
+		improved = promptRaw
 	end
 
-	if planText ~= "" then
-		enhanced = enhanced .. ("\n\nAI build plan (follow order):\n%s"):format(planText)
-	end
-
-	local mem = getMemoryContextText()
-	if mem ~= "" then
-		enhanced = enhanced .. ("\n\n%s"):format(mem)
-	end
-
-	promptBox.Text = enhanced
+	-- Update prompt box with the improved prompt (Roblox-ready).
+	promptBox.Text = improved
 	promptBox.PlaceholderText = "Describe your game or feature..."
-	-- Make the update visible: jump to the end so appended content is in view.
+
+	-- Make the update visible: jump to the end.
 	pcall(function()
 		promptBox:CaptureFocus()
 		promptBox.CursorPosition = #promptBox.Text + 1
