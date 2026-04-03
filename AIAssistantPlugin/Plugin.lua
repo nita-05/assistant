@@ -289,26 +289,49 @@ headerH.FillDirection = Enum.FillDirection.Horizontal
 headerH.HorizontalAlignment = Enum.HorizontalAlignment.Left
 headerH.VerticalAlignment = Enum.VerticalAlignment.Center
 headerH.SortOrder = Enum.SortOrder.LayoutOrder
-headerH.Padding = UDim.new(0, 8)
+headerH.Padding = UDim.new(0, 12)
 headerH.Parent = headerContent
+
+-- Brand unit: keep logo + title visually grouped (modern SaaS-style header).
+local brandUnit = Instance.new("Frame")
+brandUnit.Name = "BrandUnit"
+brandUnit.BackgroundTransparency = 1
+-- Leave room for the right-side control cluster.
+brandUnit.Size = UDim2.new(1, -360, 1, 0)
+brandUnit.LayoutOrder = 1
+brandUnit.ZIndex = 11
+brandUnit.Parent = headerContent
+
+local brandUnitLayout = Instance.new("UIListLayout")
+brandUnitLayout.FillDirection = Enum.FillDirection.Horizontal
+brandUnitLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+brandUnitLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+brandUnitLayout.SortOrder = Enum.SortOrder.LayoutOrder
+brandUnitLayout.Padding = UDim.new(0, 10)
+brandUnitLayout.Parent = brandUnit
 
 local brandTile = Instance.new("Frame")
 brandTile.Name = "BrandTile"
 brandTile.BackgroundColor3 = Color3.fromRGB(10, 16, 34)
 brandTile.BorderSizePixel = 0
-brandTile.Size = UDim2.new(0, 26, 0, 26)
+brandTile.Size = UDim2.new(0, 40, 0, 40)
 brandTile.LayoutOrder = 1
-brandTile.Parent = headerContent
+brandTile.Parent = brandUnit
+brandTile.Active = true
 
 local brandTileCorner = Instance.new("UICorner")
-brandTileCorner.CornerRadius = UDim.new(0, 10)
+brandTileCorner.CornerRadius = UDim.new(1, 0)
 brandTileCorner.Parent = brandTile
 
 local brandTileStroke = Instance.new("UIStroke")
 brandTileStroke.Color = Color3.fromRGB(33, 56, 104)
 brandTileStroke.Thickness = 1
-brandTileStroke.Transparency = 0.35
+brandTileStroke.Transparency = 0.25
 brandTileStroke.Parent = brandTile
+
+local brandTileScale = Instance.new("UIScale")
+brandTileScale.Scale = 1
+brandTileScale.Parent = brandTile
 
 local brandIcon = Instance.new("TextLabel")
 brandIcon.Name = "BrandIcon"
@@ -404,13 +427,13 @@ local brandBadge = Instance.new("Frame")
 brandBadge.Name = "BrandBadge"
 brandBadge.AnchorPoint = Vector2.new(0.5, 0.5)
 brandBadge.Position = UDim2.new(0.5, 0, 0.5, 0)
-brandBadge.Size = UDim2.new(0, 22, 0, 22)
+brandBadge.Size = UDim2.new(0, 32, 0, 32)
 brandBadge.BackgroundColor3 = Color3.fromRGB(100, 70, 235)
 brandBadge.BorderSizePixel = 0
 brandBadge.Parent = brandTile
 
 local brandBadgeCorner = Instance.new("UICorner")
-brandBadgeCorner.CornerRadius = UDim.new(0, 11)
+brandBadgeCorner.CornerRadius = UDim.new(1, 0)
 brandBadgeCorner.Parent = brandBadge
 
 local brandBadgeGrad = Instance.new("UIGradient")
@@ -434,7 +457,7 @@ brandV.Size = UDim2.new(1, 0, 1, 0)
 brandV.Text = "V"
 brandV.TextColor3 = Color3.fromRGB(229, 236, 255)
 brandV.Font = Enum.Font.GothamBold
-brandV.TextSize = 14
+brandV.TextSize = 18
 brandV.Parent = brandBadge
 
 -- Make sure the visible badge actually fits the smaller brand tile.
@@ -444,16 +467,15 @@ brandV.ZIndex = 13
 local titleStack = Instance.new("Frame")
 titleStack.Name = "TitleStack"
 titleStack.BackgroundTransparency = 1
--- Leave room for the right-side control cluster.
-titleStack.Size = UDim2.new(1, -360, 1, 0)
+titleStack.Size = UDim2.new(1, -50, 1, 0)
 titleStack.LayoutOrder = 2
 titleStack.ZIndex = 11
-titleStack.Parent = headerContent
+titleStack.Parent = brandUnit
 
 local titleStackLayout = Instance.new("UIListLayout")
 titleStackLayout.FillDirection = Enum.FillDirection.Vertical
 titleStackLayout.SortOrder = Enum.SortOrder.LayoutOrder
-titleStackLayout.Padding = UDim.new(0, 1)
+titleStackLayout.Padding = UDim.new(0, 0)
 titleStackLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 titleStackLayout.Parent = titleStack
 
@@ -463,8 +485,8 @@ title.Text = "ibeCoder"
 title.Size = UDim2.new(1, 0, 0, 22)
 title.BackgroundTransparency = 1
 title.TextColor3 = THEME.Text
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.TextSize = 21
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.LayoutOrder = 1
 title.ZIndex = 11
@@ -475,9 +497,9 @@ subtitle.Text = "Roblox AI Builder"
 subtitle.Size = UDim2.new(1, 0, 0, 16)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = THEME.Text
-subtitle.TextTransparency = 0.35
-subtitle.Font = Enum.Font.Gotham
-subtitle.TextSize = 11
+subtitle.TextTransparency = 0.45
+subtitle.Font = Enum.Font.GothamMedium
+subtitle.TextSize = 12
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.LayoutOrder = 2
 subtitle.ZIndex = 11
@@ -488,7 +510,7 @@ headerFill.Name = "HeaderFill"
 headerFill.BackgroundTransparency = 1
 -- Spacer: keep 0-width so it doesn't push right controls off-screen.
 headerFill.Size = UDim2.new(0, 0, 1, 0)
-headerFill.LayoutOrder = 3
+headerFill.LayoutOrder = 2
 headerFill.Parent = headerContent
 
 -- Top-right controls: model switching, live mode, memory, credits
@@ -496,8 +518,33 @@ local headerRight = Instance.new("Frame")
 headerRight.Name = "HeaderRight"
 headerRight.BackgroundTransparency = 1
 headerRight.Size = UDim2.new(0, 280, 1, 0)
-headerRight.LayoutOrder = 4
+headerRight.LayoutOrder = 3
 headerRight.Parent = headerContent
+
+-- Subtle hover polish (purely visual).
+brandTile.MouseEnter:Connect(function()
+	brandTileScale.Scale = 1.03
+	brandTileStroke.Transparency = 0.18
+end)
+brandTile.MouseLeave:Connect(function()
+	brandTileScale.Scale = 1
+	brandTileStroke.Transparency = 0.25
+end)
+
+-- Responsive: slightly tighten spacing and type on narrow widths.
+local function applyBrandResponsive()
+	local w = headerPanel.AbsoluteSize.X
+	local compact = w > 0 and w < 620
+	brandUnitLayout.Padding = UDim.new(0, compact and 8 or 10)
+	title.TextSize = compact and 19 or 21
+	subtitle.TextSize = compact and 11 or 12
+	brandTile.Size = UDim2.new(0, compact and 36 or 40, 0, compact and 36 or 40)
+	brandBadge.Size = UDim2.new(0, compact and 28 or 32, 0, compact and 28 or 32)
+	brandV.TextSize = compact and 16 or 18
+	titleStack.Size = UDim2.new(1, -((compact and 36 or 40) + (compact and 8 or 10)), 1, 0)
+end
+applyBrandResponsive()
+headerPanel:GetPropertyChangedSignal("AbsoluteSize"):Connect(applyBrandResponsive)
 
 local headerRightLayout = Instance.new("UIListLayout")
 headerRightLayout.FillDirection = Enum.FillDirection.Horizontal
