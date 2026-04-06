@@ -59,12 +59,18 @@ local selectedModelPreset = "balanced" -- "fast" | "balanced" | "smart"
 local memoryEntries = {}
 local MAX_MEMORY_ENTRIES = 4
 
+-- Services used by UI tweens MUST be available before UI construction.
+local TweenService = game:GetService("TweenService")
+
 -- Top-level overlay for dropdown popups (prevents clipping in panels/scroll frames)
 local overlay = Instance.new("Frame")
 overlay.Name = "Overlay"
 overlay.BackgroundTransparency = 1
 overlay.Size = UDim2.new(1, 0, 1, 0)
 overlay.ZIndex = 500
+-- Critical: overlay must never block clicks on underlying buttons.
+overlay.Active = false
+overlay.Selectable = false
 overlay.Parent = frame
 
 local function toOverlayPos(guiObj)
@@ -1075,6 +1081,9 @@ chipsLayout.Padding = UDim.new(0, 8)
 chipsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 chipsLayout.Parent = chipsRow
 
+-- Hidden by default; we show auto-suggestions after a successful generation.
+chipsRow.Visible = false
+
 local function makeChip(text)
 	local b = Instance.new("TextButton")
 	b.AutoButtonColor = false
@@ -1128,18 +1137,6 @@ local function makeChip(text)
 	return b
 end
 
-local chipGameSystem = makeChip("🧠 Game System")
-chipGameSystem.LayoutOrder = 1
-chipGameSystem.Parent = chipsRow
-
-local chipCombatSystem = makeChip("⚔️ Combat System")
-chipCombatSystem.LayoutOrder = 2
-chipCombatSystem.Parent = chipsRow
-
-local chipShopSystem = makeChip("🏪 Shop System")
-chipShopSystem.LayoutOrder = 3
-chipShopSystem.Parent = chipsRow
-
 local function applyChipPrompt(text)
 	promptBox.Text = tostring(text or "")
 	promptBox.PlaceholderText = "💡 Describe your game or feature..."
@@ -1151,27 +1148,98 @@ local function applyChipPrompt(text)
 	end)
 end
 
-chipGameSystem.MouseButton1Click:Connect(function()
-	applyChipPrompt(table.concat({
-		"Build a robust core game system framework for a Roblox game.",
-		"Include: player data model (session-only), state management, events, and clean module structure.",
-		"Add: basic UI shell + notifications, and safe server/client boundaries.",
-	}, "\n"))
-end)
-chipCombatSystem.MouseButton1Click:Connect(function()
-	applyChipPrompt(table.concat({
-		"Build a combat system for a Roblox game.",
-		"Include: melee + ranged example, damage/health, hit validation server-side, cooldowns, and basic effects.",
-		"Add: simple HUD (HP) and clean, extensible modules.",
-	}, "\n"))
-end)
-chipShopSystem.MouseButton1Click:Connect(function()
-	applyChipPrompt(table.concat({
-		"Build a shop system for a Roblox game.",
-		"Include: currency (leaderstats/session), item catalog, purchase validation server-side, and a clean shop UI.",
-		"Add: equip/unequip flow and basic feedback (toast/confirmation).",
-	}, "\n"))
-end)
+local function clearQuickChips()
+	for _, child in ipairs(chipsRow:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+end
+
+local function setQuickChips(items)
+	clearQuickChips()
+	if type(items) ~= "table" or #items == 0 then
+		chipsRow.Visible = false
+		return
+	end
+	for i, it in ipairs(items) do
+		if type(it) == "table" and type(it.label) == "string" and type(it.prompt) == "string" then
+			local c = makeChip(it.label)
+			c.LayoutOrder = i
+			c.Parent = chipsRow
+			c.MouseButton1Click:Connect(function()
+				applyChipPrompt(it.prompt)
+			end)
+		end
+	end
+	chipsRow.Visible = true
+end
+
+local function buildAutoSuggestionsFromPrompt(promptText)
+	local p = string.lower(tostring(promptText or ""))
+	local suggestions = {}
+
+	local function add(label, lines)
+		table.insert(suggestions, {
+			label = label,
+			prompt = table.concat(lines, "\n"),
+		})
+	end
+
+	-- Template-ish suggestions (simple heuristics).
+	if string.find(p, "obby", 1, true) then
+		add("🧱 Obby", {
+			"Build a fun Roblox obby with a clear start and finish.",
+			"Include checkpoints every 3-4 stages, a few kill/reset parts, and a win screen.",
+			"Style: dark neon vibe, soft glow lighting, readable UI.",
+		})
+	end
+	if string.find(p, "tycoon", 1, true) then
+		add("🏗️ Tycoon", {
+			"Build a Roblox tycoon with droppers, upgrades, and a purchase UI.",
+			"Include server validation, data model (session), and clean module structure.",
+		})
+	end
+	if string.find(p, "simulator", 1, true) then
+		add("💎 Simulator", {
+			"Build a Roblox simulator loop (collect -> upgrade -> unlock).",
+			"Include simple UI, progression, and clean server/client boundaries.",
+		})
+	end
+	if string.find(p, "combat", 1, true) or string.find(p, "fight", 1, true) then
+		add("⚔️ Combat", {
+			"Build a combat system for a Roblox game.",
+			"Include: melee + ranged example, damage/health, hit validation server-side, cooldowns, and basic effects.",
+			"Add: simple HUD (HP) and clean, extensible modules.",
+		})
+	end
+	if string.find(p, "shop", 1, true) or string.find(p, "store", 1, true) then
+		add("🏪 Shop", {
+			"Build a shop system for a Roblox game.",
+			"Include: currency (leaderstats/session), item catalog, purchase validation server-side, and a clean shop UI.",
+			"Add: equip/unequip flow and basic feedback (toast/confirmation).",
+		})
+	end
+
+	-- Always provide at least a couple useful suggestions after generation.
+	if #suggestions == 0 then
+		add("🧠 Core System", {
+			"Build a robust core game system framework for a Roblox game.",
+			"Include: player data model (session-only), state management, events, and clean module structure.",
+			"Add: basic UI shell + notifications, and safe server/client boundaries.",
+		})
+		add("✨ Polish UI", {
+			"Improve the game's UI/UX.",
+			"Make it readable, consistent, and responsive; add subtle animations and clear feedback.",
+		})
+	end
+
+	-- Cap to keep the row clean.
+	while #suggestions > 4 do
+		table.remove(suggestions)
+	end
+	return suggestions
+end
 
 promptBox = Instance.new("TextBox")
 promptBox.Name = "PromptBox"
@@ -1193,7 +1261,7 @@ promptBox.Parent = promptCard
 
 local promptBoxPad = Instance.new("UIPadding")
 -- Leave space so prompt text doesn't render under the quick chips row.
-promptBoxPad.PaddingTop = UDim.new(0, 32)
+promptBoxPad.PaddingTop = UDim.new(0, 6)
 promptBoxPad.PaddingBottom = UDim.new(0, 2)
 promptBoxPad.PaddingLeft = UDim.new(0, 2)
 -- Reserve space for the bottom-right Enhance Prompt button so text never hides under it.
@@ -1211,8 +1279,8 @@ promptBox.FocusLost:Connect(function()
 	promptCardStroke.Thickness = 1
 end)
 
--- Lightweight autosuggestions (non-blocking; boosts “smart” feel).
-do
+-- Lightweight autosuggestions popup disabled (user requested removal).
+if false then
 	local suggestPopup = Instance.new("Frame")
 	suggestPopup.Name = "PromptSuggestPopup"
 	suggestPopup.BackgroundColor3 = THEME.Surface
@@ -1685,7 +1753,9 @@ generateBtn.Parent = actionsPanel
 -- Swap-in Stop button (replaces Generate while busy).
 stopBtn = Instance.new("TextButton")
 stopBtn.Name = "StopBtn"
-stopBtn.Text = "Stop"
+stopBtn.AutoButtonColor = false
+-- Use an overlay label for crisper text (matches Generate button treatment).
+stopBtn.Text = ""
 stopBtn.Size = UDim2.new(1, 0, 0, 50)
 stopBtn.Position = UDim2.new(0, 0, 0, 0)
 stopBtn.LayoutOrder = 3
@@ -1694,10 +1764,27 @@ styleButton(stopBtn, stopBase)
 stopBtn.TextSize = 16
 stopBtn.Font = Enum.Font.GothamBold
 stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopBtn.TextTransparency = 0
-stopBtn.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-stopBtn.TextStrokeTransparency = 0.35
+stopBtn.TextTransparency = 1
+stopBtn.TextStrokeTransparency = 1
 stopBtn.ClipsDescendants = false
+
+local stopLabel = Instance.new("TextLabel")
+stopLabel.Name = "StopLabel"
+stopLabel.BackgroundTransparency = 1
+stopLabel.Size = UDim2.new(1, 0, 1, 0)
+stopLabel.Position = UDim2.new(0, 0, 0, 0)
+stopLabel.Active = false
+stopLabel.Selectable = false
+stopLabel.ClipsDescendants = false
+stopLabel.Text = "Stop"
+stopLabel.Font = Enum.Font.GothamBold
+stopLabel.TextSize = 16
+stopLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopLabel.TextTransparency = 0
+stopLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+stopLabel.TextStrokeTransparency = 0.12
+stopLabel.ZIndex = (stopBtn.ZIndex or 1) + 1
+stopLabel.Parent = stopBtn
 do
 	local g = Instance.new("UIGradient")
 	g.Color = ColorSequence.new({
@@ -1987,15 +2074,324 @@ local HttpService = game:GetService("HttpService")
 local InsertService = game:GetService("InsertService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local StarterGui = game:GetService("StarterGui")
 local StarterPlayer = game:GetService("StarterPlayer")
 local StarterPlayerScripts = StarterPlayer:WaitForChild("StarterPlayerScripts")
 
--- Separate ModuleScript chunk avoids Luau "Out of local registers" (limit ~200) on this large plugin.
-local StructuredBuild = require(script.Parent:WaitForChild("StructuredBuild"))
+-- Single-script build: embed StructuredBuild as a local module (isolated function scope).
+local StructuredBuild = (function()
+	local workspace = game:GetService("Workspace")
+	local ServerScriptService = game:GetService("ServerScriptService")
+	local StarterGui = game:GetService("StarterGui")
+	local StarterPlayer = game:GetService("StarterPlayer")
+	local StarterPlayerScripts = StarterPlayer:WaitForChild("StarterPlayerScripts")
+
+	local ROOT_FOLDER_NAME = "AI_Build"
+
+	local function getOrCreateFolder(parent, name)
+		local f = parent:FindFirstChild(name)
+		if f and f:IsA("Folder") then
+			return f
+		end
+		f = Instance.new("Folder")
+		f.Name = name
+		f.Parent = parent
+		return f
+	end
+
+	local function ensureAiFolders()
+		return {
+			workspace = getOrCreateFolder(workspace, ROOT_FOLDER_NAME),
+			server = getOrCreateFolder(ServerScriptService, ROOT_FOLDER_NAME),
+			gui = getOrCreateFolder(StarterGui, ROOT_FOLDER_NAME),
+			starterPlayerScripts = getOrCreateFolder(StarterPlayerScripts, ROOT_FOLDER_NAME),
+		}
+	end
+
+	local function clearGeneratedBuild()
+		local removed = 0
+		local w = workspace:FindFirstChild(ROOT_FOLDER_NAME)
+		if w then
+			if pcall(function()
+				w:Destroy()
+			end) then
+				removed += 1
+			end
+		end
+		local s = ServerScriptService:FindFirstChild(ROOT_FOLDER_NAME)
+		if s then
+			if pcall(function()
+				s:Destroy()
+			end) then
+				removed += 1
+			end
+		end
+		local g = StarterGui:FindFirstChild(ROOT_FOLDER_NAME)
+		if g then
+			if pcall(function()
+				g:Destroy()
+			end) then
+				removed += 1
+			end
+		end
+		local sps = StarterPlayerScripts:FindFirstChild(ROOT_FOLDER_NAME)
+		if sps then
+			if pcall(function()
+				sps:Destroy()
+			end) then
+				removed += 1
+			end
+		end
+		return removed
+	end
+
+	local ALLOWED_CLASSES = {
+		Folder = true,
+		Model = true,
+		Part = true,
+		MeshPart = true,
+		SpawnLocation = true,
+		PointLight = true,
+		BillboardGui = true,
+		ScreenGui = true,
+		TextLabel = true,
+		TextButton = true,
+		UICorner = true,
+		UIStroke = true,
+		UIListLayout = true,
+		Script = true,
+		LocalScript = true,
+		ModuleScript = true,
+	}
+
+	local ALLOWED_PROPERTIES = {
+		Name = true,
+		Anchored = true,
+		CanCollide = true,
+		Transparency = true,
+		Material = true,
+		Color = true,
+		BrickColor = true,
+		Brightness = true,
+		Range = true,
+		Size = true,
+		Position = true,
+		CFrame = true,
+		Rotation = true,
+		Text = true,
+		TextSize = true,
+		TextColor3 = true,
+		BorderSizePixel = true,
+		BackgroundColor3 = true,
+		BackgroundTransparency = true,
+		Font = true,
+		Visible = true,
+		Enabled = true,
+		ResetOnSpawn = true,
+		AlwaysOnTop = true,
+		StudsOffset = true,
+		StudsOffsetWorldSpace = true,
+	}
+
+	local function toColor3(v)
+		if typeof(v) == "Color3" then
+			return v
+		end
+		if type(v) == "string" then
+			local r, g, b = v:match("@{r=([%-%d%.]+)%s*;%s*g=([%-%d%.]+)%s*;%s*b=([%-%d%.]+)%s*}")
+			if r and g and b then
+				r, g, b = tonumber(r), tonumber(g), tonumber(b)
+				if r and g and b then
+					if r <= 1 and g <= 1 and b <= 1 then
+						return Color3.fromRGB(r * 255, g * 255, b * 255)
+					end
+					return Color3.fromRGB(r, g, b)
+				end
+			end
+		end
+		if type(v) == "table" then
+			if v.r and v.g and v.b then
+				return Color3.new(v.r, v.g, v.b)
+			end
+			if #v == 3 then
+				if v[1] > 1 or v[2] > 1 or v[3] > 1 then
+					return Color3.fromRGB(v[1], v[2], v[3])
+				end
+				return Color3.new(v[1], v[2], v[3])
+			end
+		end
+		return nil
+	end
+
+	local function toVector3(v)
+		if typeof(v) == "Vector3" then
+			return v
+		end
+		if type(v) == "string" then
+			local x, y, z = v:match("@{x=([%-%d%.]+)%s*;%s*y=([%-%d%.]+)%s*;%s*z=([%-%d%.]+)%s*}")
+			if x and y and z then
+				x, y, z = tonumber(x), tonumber(y), tonumber(z)
+				if x and y and z then
+					return Vector3.new(x, y, z)
+				end
+			end
+		end
+		if type(v) == "table" and #v == 3 then
+			return Vector3.new(v[1], v[2], v[3])
+		end
+		return nil
+	end
+
+	local function toCFrame(v)
+		if typeof(v) == "CFrame" then
+			return v
+		end
+		if type(v) == "table" and #v == 3 then
+			return CFrame.new(v[1], v[2], v[3])
+		end
+		return nil
+	end
+
+	local function resolveServiceParent(parentKey)
+		if parentKey == "workspace" then
+			return workspace
+		elseif parentKey == "ServerScriptService" then
+			return ServerScriptService
+		elseif parentKey == "StarterGui" then
+			return StarterGui
+		elseif parentKey == "StarterPlayerScripts" then
+			return StarterPlayerScripts
+		end
+		return nil
+	end
+
+	local function applyStructuredBuild(build, recordHistory)
+		if type(build) ~= "table" or type(build.instances) ~= "table" then
+			return false, "Invalid build payload"
+		end
+
+		if recordHistory == nil then
+			recordHistory = true
+		end
+
+		clearGeneratedBuild()
+		local folders = ensureAiFolders()
+
+		local created = {}
+		local specs = {}
+		for _, spec in ipairs(build.instances) do
+			if type(spec) == "table" and type(spec.id) == "string" and type(spec.className) == "string" then
+				table.insert(specs, spec)
+			end
+		end
+
+		for _, spec in ipairs(specs) do
+			if not ALLOWED_CLASSES[spec.className] then
+				return false, "Disallowed class: " .. tostring(spec.className)
+			end
+			local inst = Instance.new(spec.className)
+			if type(spec.name) == "string" and spec.name ~= "" then
+				inst.Name = spec.name
+			end
+			created[spec.id] = inst
+		end
+
+		for _, spec in ipairs(specs) do
+			local inst = created[spec.id]
+			local props = spec.properties
+			if type(props) == "table" then
+				for k, v in pairs(props) do
+					if ALLOWED_PROPERTIES[k] then
+						pcall(function()
+							if k == "Color" or k == "TextColor3" or k == "BackgroundColor3" then
+								local c = toColor3(v)
+								if c then
+									inst[k] = c
+								end
+							elseif
+								k == "Position"
+								or k == "Size"
+								or k == "Rotation"
+								or k == "StudsOffset"
+								or k == "StudsOffsetWorldSpace"
+							then
+								local vec = toVector3(v)
+								if vec then
+									inst[k] = vec
+								end
+							elseif k == "BrickColor" then
+								if type(v) == "string" then
+									pcall(function()
+										inst[k] = BrickColor.new(v)
+									end)
+								end
+							elseif k == "CFrame" then
+								local cf = toCFrame(v)
+								if cf then
+									inst.CFrame = cf
+								end
+							elseif k == "Material" then
+								if type(v) == "string" then
+									pcall(function()
+										local maybe = Enum.Material[v]
+										if maybe then
+											inst.Material = maybe
+										end
+									end)
+								end
+							else
+								inst[k] = v
+							end
+						end)
+					end
+				end
+			end
+
+			if
+				(inst:IsA("Script") or inst:IsA("LocalScript") or inst:IsA("ModuleScript"))
+				and type(spec.source) == "string"
+			then
+				pcall(function()
+					inst.Source = spec.source
+				end)
+			end
+		end
+
+		for _, spec in ipairs(specs) do
+			local inst = created[spec.id]
+			local parent = nil
+			if type(spec.parent) == "string" then
+				parent = created[spec.parent] or resolveServiceParent(spec.parent)
+			end
+			if not parent then
+				parent = folders.workspace
+			end
+			if parent == workspace then
+				parent = folders.workspace
+			elseif parent == ServerScriptService then
+				parent = folders.server
+			elseif parent == StarterGui then
+				parent = folders.gui
+			elseif parent == StarterPlayerScripts then
+				parent = folders.starterPlayerScripts
+			end
+			pcall(function()
+				inst.Parent = parent
+			end)
+		end
+
+		return true, ("Created %d instances"):format(#specs)
+	end
+
+	return {
+		getOrCreateFolder = getOrCreateFolder,
+		ensureAiFolders = ensureAiFolders,
+		clearGeneratedBuild = clearGeneratedBuild,
+		applyStructuredBuild = applyStructuredBuild,
+	}
+end)()
 
 local ROOT_FOLDER_NAME = "AI_Build"
 local GENERATED_GAME_NAME = "GeneratedGame"
@@ -3105,6 +3501,7 @@ clearBtn.MouseButton1Click:Connect(function()
 	lastPrompt = ""
 	promptBox.Text = ""
 	promptBox.PlaceholderText = "💡 Describe your game or feature..."
+	setQuickChips({})
 	setLog(("Cleared AI build folders: %d"):format(removed))
 	setButtonsEnabled(true)
 end)
@@ -3492,6 +3889,7 @@ generateBtn.MouseButton1Click:Connect(function()
 			promptBox.Text = ""
 			promptBox.PlaceholderText = "💡 Optional: describe another change (or use actions below)"
 			saveMemoryFromStructuredBuild(promptRaw, data.build)
+			setQuickChips(buildAutoSuggestionsFromPrompt(promptRaw))
 			appendConsoleLine("Done. " .. msg, { typewriter = true, speedSecondsPerChar = 0.001 })
 			appendConsoleLine("Analyzing environment and importing toolbox assets...", { typewriter = false })
 			if cancelToken ~= myToken then
