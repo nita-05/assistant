@@ -1380,6 +1380,8 @@ do
 	glow.BackgroundColor3 = Color3.fromRGB(255, 232, 150)
 	glow.BackgroundTransparency = 0.9
 	glow.BorderSizePixel = 0
+	glow.Active = false
+	glow.Selectable = false
 	glow.Size = UDim2.new(1, 12, 1, 12)
 	glow.Position = UDim2.new(0, -6, 0, -6)
 	glow.ZIndex = enhancePromptBtn.ZIndex - 1
@@ -1607,6 +1609,10 @@ generateLabel.Name = "GenerateLabel"
 generateLabel.BackgroundTransparency = 1
 generateLabel.Size = UDim2.new(1, 0, 1, 0)
 generateLabel.Position = UDim2.new(0, 0, 0, 0)
+-- Ensure the overlay label never intercepts clicks intended for the button.
+generateLabel.Active = false
+generateLabel.Selectable = false
+generateLabel.ClipsDescendants = false
 generateLabel.Text = "Generate"
 generateLabel.Font = Enum.Font.GothamBold
 generateLabel.TextSize = 16
@@ -1633,6 +1639,8 @@ do
 	glow.BackgroundColor3 = Color3.fromRGB(110, 195, 255)
 	glow.BackgroundTransparency = 0.82
 	glow.BorderSizePixel = 0
+	glow.Active = false
+	glow.Selectable = false
 	glow.Size = UDim2.new(1, 16, 1, 16)
 	glow.Position = UDim2.new(0, -8, 0, -8)
 	glow.ZIndex = (generateBtn.ZIndex or 1) - 1
@@ -1705,6 +1713,8 @@ do
 	glow.BackgroundColor3 = Color3.fromRGB(255, 120, 145)
 	glow.BackgroundTransparency = 0.86
 	glow.BorderSizePixel = 0
+	glow.Active = false
+	glow.Selectable = false
 	glow.Size = UDim2.new(1, 16, 1, 16)
 	glow.Position = UDim2.new(0, -8, 0, -8)
 	glow.ZIndex = (stopBtn.ZIndex or 1) - 1
